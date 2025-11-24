@@ -1,6 +1,5 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MakerScreen.Core.Interfaces;
 using MakerScreen.Management.ViewModels;
@@ -13,13 +12,13 @@ namespace MakerScreen.Management;
 
 public partial class App : Application
 {
-    private IHost? _host;
+    private Microsoft.Extensions.Hosting.IHost? _host;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        _host = Host.CreateDefaultBuilder()
+        _host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
                 // Register services
