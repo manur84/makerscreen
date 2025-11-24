@@ -1,0 +1,6 @@
+websockets>=12.0
+PyQt5>=5.15.0
+Flask>=3.0.0
+qasync>=0.27.0
+Pillow>=10.0.0
+zeroconf>=0.131.0
