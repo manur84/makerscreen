@@ -1,0 +1,16 @@
+[Unit]
+Description=MakerScreen Digital Signage Client
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/makerscreen
+ExecStart=/usr/bin/python3 /opt/makerscreen/client.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
