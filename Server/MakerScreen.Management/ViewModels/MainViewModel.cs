@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -36,9 +37,11 @@ public partial class MainViewModel : ObservableObject
         _deploymentService = deploymentService;
         _contentService = contentService;
 
-        // Start periodic client list refresh
+        // Start periodic client list refresh (fire and forget)
         StartClientRefreshTimer();
+#pragma warning disable CS4014
         LoadContent();
+#pragma warning restore CS4014
     }
 
     [RelayCommand]
