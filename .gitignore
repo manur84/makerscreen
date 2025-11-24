@@ -56,7 +56,10 @@ pip-delete-this-directory.txt
 
 # Deployment
 Deployments/
-Content/
+# Ignore runtime content directory but not source code
+/Content/
+*/bin/*/Content/
+*/obj/*/Content/
 *.img
 *.img.xz
 *.zip
