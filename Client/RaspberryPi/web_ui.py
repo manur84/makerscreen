@@ -19,8 +19,9 @@ logger = logging.getLogger('WebUI')
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-CONFIG_FILE = '/opt/makerscreen/config.json'
-CONTENT_DIR = '/opt/makerscreen/content'
+# Configuration - can be overridden by environment variables
+CONFIG_FILE = os.environ.get('MAKERSCREEN_CONFIG', '/opt/makerscreen/config.json')
+CONTENT_DIR = os.environ.get('MAKERSCREEN_CONTENT', '/opt/makerscreen/content')
 
 # HTML Templates
 BASE_TEMPLATE = '''

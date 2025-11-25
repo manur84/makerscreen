@@ -420,12 +420,22 @@ class MakerScreenClient:
             handler(params)
     
     def _cmd_reboot(self, params):
+        """Handle reboot command with safety check"""
         logger.warning('Reboot command received')
-        # os.system('sudo reboot')
+        delay = int(params.get('delay', 5))
+        
+        # Only allow reboot if explicitly enabled in config
+        if self.config.get('allowReboot', False):
+            import subprocess
+            logger.warning(f'System will reboot in {delay} seconds')
+            # Use shutdown command for safer reboot
+            subprocess.Popen(['sudo', 'shutdown', '-r', f'+{delay // 60}', 'MakerScreen reboot requested'])
+        else:
+            logger.warning('Reboot command ignored - not enabled in config')
     
     def _cmd_update(self, params):
         logger.info('Update command received')
-        # Perform client update
+        # Perform client update (would download and install new version)
     
     def _cmd_clear_content(self, params):
         logger.info('Clearing content')

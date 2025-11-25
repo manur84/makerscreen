@@ -51,8 +51,8 @@ echo "Updating package list..."
 sudo apt-get update -qq
 
 echo "Installing system dependencies..."
-sudo apt-get install -y python3 python3-pip python3-venv python3-pyqt5 > /dev/null 2>&1 || {
-    echo "Note: Some optional packages may not be available. Core functionality will still work."
+sudo apt-get install -y python3 python3-pip python3-venv python3-pyqt5 2>&1 | grep -i "error\|failed" || {
+    echo "System dependencies installed (some optional packages may not be available)."
 }
 
 # Create virtual environment
@@ -62,7 +62,7 @@ source "$INSTALL_DIR/venv/bin/activate"
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip3 install --upgrade pip > /dev/null
+pip3 install --upgrade pip 2>&1 | grep -i "error\|warning" || true
 pip3 install -r "$INSTALL_DIR/requirements.txt" > /dev/null
 
 deactivate

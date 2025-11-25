@@ -179,7 +179,7 @@ public class NetworkDiscoveryService : INetworkDiscoveryService
                     var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length >= 4 && parts[0] == ip)
                     {
-                        return parts[3].ToUpper().Replace(":", ":");
+                        return parts[3].ToUpper();
                     }
                 }
             }

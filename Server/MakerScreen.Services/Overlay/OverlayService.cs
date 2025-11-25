@@ -143,7 +143,14 @@ public class OverlayService : IOverlayService
 
     private string RenderTickerOverlay(Core.Models.Overlay overlay)
     {
-        return $@"<div style='{GenerateStyle(overlay.Style)}'><marquee>{overlay.Content}</marquee></div>";
+        // Use CSS animation instead of deprecated marquee tag
+        var style = GenerateStyle(overlay.Style);
+        return $@"<div style='{style}overflow:hidden;'>
+            <div style='display:inline-block;animation:scroll 10s linear infinite;white-space:nowrap;'>
+                {overlay.Content}
+            </div>
+            <style>@keyframes scroll {{ 0% {{ transform:translateX(100%); }} 100% {{ transform:translateX(-100%); }} }}</style>
+        </div>";
     }
 
     private async Task<string> RenderSqlOverlayAsync(Core.Models.Overlay overlay, CancellationToken cancellationToken)

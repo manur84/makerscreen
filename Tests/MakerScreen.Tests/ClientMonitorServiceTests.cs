@@ -64,7 +64,9 @@ public class ClientMonitorServiceTests
         _service.UpdateClientStatus("client-001", ClientStatus.Offline);
 
         // Assert
-        _service.GetClient("client-001")!.Status.Should().Be(ClientStatus.Offline);
+        var updatedClient = _service.GetClient("client-001");
+        updatedClient.Should().NotBeNull();
+        updatedClient!.Status.Should().Be(ClientStatus.Offline);
     }
 
     [Fact]
@@ -82,7 +84,9 @@ public class ClientMonitorServiceTests
         _service.RecordHeartbeat("client-001");
 
         // Assert
-        _service.GetClient("client-001")!.LastSeen.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        var updatedClient = _service.GetClient("client-001");
+        updatedClient.Should().NotBeNull();
+        updatedClient!.LastSeen.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
     }
 
     [Fact]
