@@ -21,6 +21,7 @@ public class SecureWebSocketServer : IWebSocketServer
     private CancellationTokenSource? _cancellationTokenSource;
     private readonly int _port;
     private readonly X509Certificate2? _certificate;
+    private string? _actualBindingAddress;
 
     public SecureWebSocketServer(ILogger<SecureWebSocketServer> logger, int port = 8443)
     {
@@ -29,6 +30,11 @@ public class SecureWebSocketServer : IWebSocketServer
         _certificate = GenerateSelfSignedCertificate();
     }
 
+    /// <summary>
+    /// Gets the actual binding address used by the server (localhost or wildcard)
+    /// </summary>
+    public string? ActualBindingAddress => _actualBindingAddress;
+
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Starting WebSocket server on port {Port}", _port);
@@ -36,13 +42,64 @@ public class SecureWebSocketServer : IWebSocketServer
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _listener = new HttpListener();
         
-        // Support both HTTP (for local development) and HTTPS
-        _listener.Prefixes.Add($"http://+:{_port}/");
-        _listener.Start();
+        // Try wildcard binding first (requires admin rights), fall back to localhost
+        if (!TryStartWithWildcard() && !TryStartWithLocalhost())
+        {
+            throw new WebSocketServerException(
+                $"Failed to start WebSocket server on port {_port}. " +
+                "Please run the application as Administrator to bind to all network interfaces, " +
+                "or ensure the port is not in use by another application.");
+        }
         
-        _logger.LogInformation("WebSocket server started successfully");
+        _logger.LogInformation("WebSocket server started successfully on {BindingAddress}", _actualBindingAddress);
         
         _ = Task.Run(() => AcceptConnectionsAsync(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
+    }
+
+    private bool TryStartWithWildcard()
+    {
+        try
+        {
+            _listener!.Prefixes.Clear();
+            _listener.Prefixes.Add($"http://+:{_port}/");
+            _listener.Start();
+            _actualBindingAddress = $"http://+:{_port}/";
+            _logger.LogInformation("Successfully bound to all network interfaces (wildcard binding)");
+            return true;
+        }
+        catch (HttpListenerException ex) when (ex.ErrorCode == 5) // Access Denied
+        {
+            _logger.LogWarning("Cannot bind to all interfaces (Access Denied). Administrator rights required for wildcard binding. Falling back to localhost.");
+            return false;
+        }
+        catch (HttpListenerException ex)
+        {
+            _logger.LogWarning(ex, "Failed to start with wildcard binding (error code: {ErrorCode})", ex.ErrorCode);
+            return false;
+        }
+    }
+
+    private bool TryStartWithLocalhost()
+    {
+        try
+        {
+            // Reset and reconfigure for localhost only
+            if (_listener!.IsListening)
+            {
+                _listener.Stop();
+            }
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://localhost:{_port}/");
+            _listener.Start();
+            _actualBindingAddress = $"http://localhost:{_port}/";
+            _logger.LogInformation("Successfully bound to localhost only. Remote connections will not be accepted.");
+            return true;
+        }
+        catch (HttpListenerException ex)
+        {
+            _logger.LogError(ex, "Failed to start on localhost (error code: {ErrorCode})", ex.ErrorCode);
+            return false;
+        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
@@ -290,4 +347,13 @@ public class SecureWebSocketServer : IWebSocketServer
             WebSocket = webSocket;
         }
     }
+}
+
+/// <summary>
+/// Exception thrown when the WebSocket server fails to start
+/// </summary>
+public class WebSocketServerException : Exception
+{
+    public WebSocketServerException(string message) : base(message) { }
+    public WebSocketServerException(string message, Exception innerException) : base(message, innerException) { }
 }
