@@ -232,7 +232,7 @@ The architecture supports these planned features:
 - [ ] SQL Server database backend
 - [ ] Content scheduling and playlists
 - [ ] Multi-zone display layouts
-- [ ] iOS management app
+- [x] iOS management app (see `Client/iOS/MakerScreen`)
 - [ ] Video content support
 - [ ] Interactive touch screen
 - [ ] Emergency broadcast system
