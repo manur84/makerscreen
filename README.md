@@ -132,11 +132,15 @@ MakerScreen/
 │       ├── ViewModels/             # MVVM ViewModels
 │       └── Views/                  # WPF views
 ├── Client/
-│   └── RaspberryPi/                # Python client for Raspberry Pi
-│       ├── client.py               # Main client application
-│       ├── requirements.txt        # Python dependencies
-│       ├── install.sh              # Installation script
-│       └── makerscreen.service     # Systemd service file
+│   ├── RaspberryPi/                # Python client for Raspberry Pi
+│   │   ├── client.py               # Main client application
+│   │   ├── requirements.txt        # Python dependencies
+│   │   ├── install.sh              # Installation script
+│   │   └── makerscreen.service     # Systemd service file
+│   └── iOS/                        # iOS management app (SwiftUI)
+│       └── MakerScreen/            # Swift Package
+│           ├── Sources/            # Swift source code
+│           └── Tests/              # Unit tests
 ├── Deployment/
 │   ├── ImageBuilder/               # Raspberry Pi image builder
 │   └── Scripts/                    # Deployment automation scripts
@@ -399,7 +403,7 @@ For support, please:
 ### Version 1.1 (Planned)
 - [ ] Content scheduling and playlists
 - [ ] Multi-zone display layouts
-- [ ] iOS management app
+- [x] iOS management app (see `Client/iOS/MakerScreen`)
 - [ ] Database backend (SQL Server)
 - [ ] Advanced analytics and reporting
 
