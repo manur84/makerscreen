@@ -7,6 +7,10 @@ using MakerScreen.Management.Views;
 using MakerScreen.Services.WebSocket;
 using MakerScreen.Services.Deployment;
 using MakerScreen.Services.Content;
+using MakerScreen.Services.Playlist;
+using MakerScreen.Services.Overlay;
+using MakerScreen.Services.Monitor;
+using MakerScreen.Services.Discovery;
 
 namespace MakerScreen.Management;
 
@@ -21,10 +25,16 @@ public partial class App : Application
         _host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                // Register services
+                // Register core services
                 services.AddSingleton<IWebSocketServer, SecureWebSocketServer>();
                 services.AddSingleton<IClientDeploymentService, ClientDeploymentService>();
                 services.AddSingleton<IContentService, ContentService>();
+                
+                // Register new services
+                services.AddSingleton<IPlaylistService, PlaylistService>();
+                services.AddSingleton<IOverlayService, OverlayService>();
+                services.AddSingleton<IClientMonitorService, ClientMonitorService>();
+                services.AddSingleton<INetworkDiscoveryService, NetworkDiscoveryService>();
 
                 // Register ViewModels
                 services.AddTransient<MainViewModel>();

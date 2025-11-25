@@ -1,12 +1,19 @@
 <Application x:Class="MakerScreen.Management.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:MakerScreen.Management.Converters">
     <Application.Resources>
         <ResourceDictionary>
             <SolidColorBrush x:Key="PrimaryBrush" Color="#2196F3"/>
             <SolidColorBrush x:Key="AccentBrush" Color="#FF9800"/>
             <SolidColorBrush x:Key="SuccessBrush" Color="#4CAF50"/>
             <SolidColorBrush x:Key="ErrorBrush" Color="#F44336"/>
+            
+            <!-- Converters -->
+            <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <converters:ClientStatusToBrushConverter x:Key="ClientStatusToBrushConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

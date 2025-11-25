@@ -1,16 +1,20 @@
 [Unit]
 Description=MakerScreen Digital Signage Client
-After=network.target
+After=network.target network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=pi
+Group=pi
 WorkingDirectory=/opt/makerscreen
-ExecStart=/usr/bin/python3 /opt/makerscreen/client.py
+ExecStart=/opt/makerscreen/venv/bin/python3 /opt/makerscreen/client.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
+Environment=DISPLAY=:0
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
