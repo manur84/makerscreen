@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MakerScreen.Core\MakerScreen.Core.csproj" />
     <ProjectReference Include="..\MakerScreen.Data\MakerScreen.Data.csproj" />
+    <ProjectReference Include="..\MakerScreen.Services\MakerScreen.Services.csproj" />
     <ProjectReference Include="..\MakerScreen.WebSocket\MakerScreen.WebSocket.csproj" />
   </ItemGroup>
 
