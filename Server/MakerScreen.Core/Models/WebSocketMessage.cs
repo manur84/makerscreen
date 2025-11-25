@@ -20,4 +20,8 @@ public static class MessageTypes
     public const string InstallClient = "INSTALL_CLIENT";
     public const string Status = "STATUS";
     public const string Error = "ERROR";
+    public const string PlaylistUpdate = "PLAYLIST_UPDATE";
+    public const string OverlayUpdate = "OVERLAY_UPDATE";
+    public const string EmergencyBroadcast = "EMERGENCY_BROADCAST";
+    public const string EmergencyClear = "EMERGENCY_CLEAR";
 }

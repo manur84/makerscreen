@@ -19,6 +19,8 @@ public partial class MainViewModel : ObservableObject
     private readonly IPlaylistService? _playlistService;
     private readonly IOverlayService? _overlayService;
     private readonly IClientMonitorService? _clientMonitorService;
+    private readonly IClientGroupService? _clientGroupService;
+    private readonly IEmergencyBroadcastService? _emergencyBroadcastService;
 
     [ObservableProperty]
     private string _statusMessage = "Ready";
@@ -35,10 +37,21 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private Playlist? _selectedPlaylist;
 
+    [ObservableProperty]
+    private Overlay? _selectedOverlay;
+
+    [ObservableProperty]
+    private ClientGroup? _selectedGroup;
+
+    [ObservableProperty]
+    private EmergencyBroadcast? _selectedEmergencyBroadcast;
+
     public ObservableCollection<SignageClient> Clients { get; } = new();
     public ObservableCollection<ContentItem> ContentItems { get; } = new();
     public ObservableCollection<Playlist> Playlists { get; } = new();
     public ObservableCollection<Overlay> Overlays { get; } = new();
+    public ObservableCollection<ClientGroup> ClientGroups { get; } = new();
+    public ObservableCollection<EmergencyBroadcast> EmergencyBroadcasts { get; } = new();
 
     public MainViewModel(
         ILogger<MainViewModel> logger,
@@ -47,7 +60,9 @@ public partial class MainViewModel : ObservableObject
         IContentService contentService,
         IPlaylistService? playlistService = null,
         IOverlayService? overlayService = null,
-        IClientMonitorService? clientMonitorService = null)
+        IClientMonitorService? clientMonitorService = null,
+        IClientGroupService? clientGroupService = null,
+        IEmergencyBroadcastService? emergencyBroadcastService = null)
     {
         _logger = logger;
         _webSocketServer = webSocketServer;
@@ -56,6 +71,8 @@ public partial class MainViewModel : ObservableObject
         _playlistService = playlistService;
         _overlayService = overlayService;
         _clientMonitorService = clientMonitorService;
+        _clientGroupService = clientGroupService;
+        _emergencyBroadcastService = emergencyBroadcastService;
 
         // Subscribe to client monitor events if available
         if (_clientMonitorService != null)
@@ -70,6 +87,8 @@ public partial class MainViewModel : ObservableObject
         LoadContent();
         LoadPlaylists();
         LoadOverlays();
+        LoadClientGroups();
+        LoadEmergencyBroadcasts();
 #pragma warning restore CS4014
     }
 
@@ -465,4 +484,353 @@ public partial class MainViewModel : ObservableObject
             _ => "application/octet-stream"
         };
     }
+
+    #region Overlay Commands
+
+    [RelayCommand]
+    private async Task CreateOverlay()
+    {
+        if (_overlayService == null) return;
+
+        try
+        {
+            var overlay = new Overlay
+            {
+                Name = $"Overlay {DateTime.Now:yyyy-MM-dd HH:mm}",
+                Type = OverlayType.Text,
+                Content = "New Overlay"
+            };
+
+            await _overlayService.CreateOverlayAsync(overlay);
+            await LoadOverlays();
+            SelectedOverlay = overlay;
+            StatusMessage = $"Overlay '{overlay.Name}' created";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating overlay");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveOverlay()
+    {
+        if (SelectedOverlay == null || _overlayService == null) return;
+
+        try
+        {
+            await _overlayService.UpdateOverlayAsync(SelectedOverlay);
+            StatusMessage = $"Overlay '{SelectedOverlay.Name}' saved";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving overlay");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteOverlay(Overlay? overlay)
+    {
+        if (overlay == null || _overlayService == null) return;
+
+        try
+        {
+            await _overlayService.DeleteOverlayAsync(overlay.Id);
+            await LoadOverlays();
+            SelectedOverlay = null;
+            StatusMessage = $"Overlay '{overlay.Name}' deleted";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting overlay");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task AssignOverlayToClients()
+    {
+        if (SelectedOverlay == null || _overlayService == null) return;
+
+        try
+        {
+            var clientIds = Clients.Select(c => c.Id).ToList();
+            await _overlayService.AssignOverlayToClientsAsync(SelectedOverlay.Id, clientIds);
+            StatusMessage = $"Overlay '{SelectedOverlay.Name}' assigned to all clients";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning overlay to clients");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    #endregion
+
+    #region Playlist Commands
+
+    [RelayCommand]
+    private async Task DeletePlaylist(Playlist? playlist)
+    {
+        if (playlist == null || _playlistService == null) return;
+
+        try
+        {
+            await _playlistService.DeletePlaylistAsync(playlist.Id);
+            await LoadPlaylists();
+            SelectedPlaylist = null;
+            StatusMessage = $"Playlist '{playlist.Name}' deleted";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting playlist");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task AssignPlaylistToGroup()
+    {
+        if (SelectedPlaylist == null || SelectedGroup == null || _clientGroupService == null) return;
+
+        try
+        {
+            await _clientGroupService.AssignPlaylistToGroupAsync(SelectedGroup.Id, SelectedPlaylist.Id);
+            StatusMessage = $"Playlist '{SelectedPlaylist.Name}' assigned to group '{SelectedGroup.Name}'";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning playlist to group");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    #endregion
+
+    #region Client Group Commands
+
+    [RelayCommand]
+    private async Task CreateGroup()
+    {
+        if (_clientGroupService == null) return;
+
+        try
+        {
+            var group = new ClientGroup
+            {
+                Name = $"Group {DateTime.Now:yyyy-MM-dd HH:mm}",
+                Description = "New client group"
+            };
+
+            await _clientGroupService.CreateGroupAsync(group);
+            await LoadClientGroups();
+            SelectedGroup = group;
+            StatusMessage = $"Group '{group.Name}' created";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating group");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteGroup(ClientGroup? group)
+    {
+        if (group == null || _clientGroupService == null) return;
+
+        try
+        {
+            await _clientGroupService.DeleteGroupAsync(group.Id);
+            await LoadClientGroups();
+            SelectedGroup = null;
+            StatusMessage = $"Group '{group.Name}' deleted";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting group");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddClientToGroup()
+    {
+        if (SelectedClient == null || SelectedGroup == null || _clientGroupService == null) return;
+
+        try
+        {
+            await _clientGroupService.AddClientToGroupAsync(SelectedGroup.Id, SelectedClient.Id);
+            await LoadClientGroups();
+            StatusMessage = $"Client '{SelectedClient.Name}' added to group '{SelectedGroup.Name}'";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding client to group");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task PushContentToGroup()
+    {
+        if (SelectedContent == null || SelectedGroup == null || _clientGroupService == null) return;
+
+        try
+        {
+            await _clientGroupService.PushContentToGroupAsync(SelectedGroup.Id, SelectedContent.Id);
+            StatusMessage = $"Content pushed to group '{SelectedGroup.Name}'";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error pushing content to group");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task LoadClientGroups()
+    {
+        if (_clientGroupService == null) return;
+
+        try
+        {
+            var groups = await _clientGroupService.GetAllGroupsAsync();
+            
+            ClientGroups.Clear();
+            foreach (var group in groups)
+            {
+                ClientGroups.Add(group);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading client groups");
+        }
+    }
+
+    #endregion
+
+    #region Emergency Broadcast Commands
+
+    [RelayCommand]
+    private async Task CreateEmergencyBroadcast()
+    {
+        if (_emergencyBroadcastService == null) return;
+
+        try
+        {
+            var broadcast = new EmergencyBroadcast
+            {
+                Title = "Emergency Alert",
+                Message = "Enter your emergency message here",
+                Priority = EmergencyPriority.High,
+                Type = EmergencyType.Alert
+            };
+
+            await _emergencyBroadcastService.CreateBroadcastAsync(broadcast);
+            await LoadEmergencyBroadcasts();
+            SelectedEmergencyBroadcast = broadcast;
+            StatusMessage = "Emergency broadcast created";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating emergency broadcast");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SendEmergencyBroadcast()
+    {
+        if (SelectedEmergencyBroadcast == null || _emergencyBroadcastService == null) return;
+
+        try
+        {
+            await _emergencyBroadcastService.SendBroadcastAsync(SelectedEmergencyBroadcast.Id);
+            StatusMessage = $"EMERGENCY BROADCAST SENT: {SelectedEmergencyBroadcast.Title}";
+            _logger.LogWarning("Emergency broadcast sent: {Title}", SelectedEmergencyBroadcast.Title);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending emergency broadcast");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SendEmergencyToGroup()
+    {
+        if (SelectedEmergencyBroadcast == null || SelectedGroup == null || _emergencyBroadcastService == null) return;
+
+        try
+        {
+            await _emergencyBroadcastService.SendBroadcastToGroupAsync(SelectedEmergencyBroadcast.Id, SelectedGroup.Id);
+            StatusMessage = $"Emergency broadcast sent to group '{SelectedGroup.Name}'";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending emergency to group");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ClearEmergencyBroadcast(EmergencyBroadcast? broadcast)
+    {
+        if (broadcast == null || _emergencyBroadcastService == null) return;
+
+        try
+        {
+            await _emergencyBroadcastService.ClearBroadcastAsync(broadcast.Id);
+            await LoadEmergencyBroadcasts();
+            StatusMessage = $"Emergency broadcast '{broadcast.Title}' cleared";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing emergency broadcast");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ClearAllEmergencyBroadcasts()
+    {
+        if (_emergencyBroadcastService == null) return;
+
+        try
+        {
+            await _emergencyBroadcastService.ClearAllBroadcastsAsync();
+            await LoadEmergencyBroadcasts();
+            StatusMessage = "All emergency broadcasts cleared";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing all emergency broadcasts");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task LoadEmergencyBroadcasts()
+    {
+        if (_emergencyBroadcastService == null) return;
+
+        try
+        {
+            var broadcasts = await _emergencyBroadcastService.GetAllBroadcastsAsync();
+            
+            EmergencyBroadcasts.Clear();
+            foreach (var broadcast in broadcasts)
+            {
+                EmergencyBroadcasts.Add(broadcast);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading emergency broadcasts");
+        }
+    }
+
+    #endregion
 }

@@ -176,6 +176,21 @@ class DisplayManager:
         """Show a message on screen"""
         if self._initialized and self.display:
             self.display.signals.show_message.emit(message)
+    
+    def show_emergency(self, emergency_data):
+        """Show emergency broadcast (highest priority, interrupts content)"""
+        if self._initialized and self.display:
+            self.display.signals.emergency_broadcast.emit(emergency_data)
+            logger.warning(f"Emergency displayed: {emergency_data.get('title')}")
+        else:
+            # Fallback for headless mode - log the emergency
+            logger.warning(f"EMERGENCY (headless): {emergency_data.get('title')} - {emergency_data.get('message')}")
+    
+    def clear_emergency(self):
+        """Clear emergency broadcast and resume normal content"""
+        if self._initialized and self.display:
+            self.display.signals.emergency_clear.emit()
+            logger.info("Emergency broadcast cleared")
 
 
 class MakerScreenClient:
@@ -193,6 +208,7 @@ class MakerScreenClient:
         self.current_playlist = None
         self.playlist_index = 0
         self.connected = False
+        self.active_emergency = None  # Track active emergency broadcast
         
         # Initialize display if available
         self.display_manager.initialize()
@@ -318,7 +334,9 @@ class MakerScreenClient:
             'COMMAND': self.handle_command,
             'REGISTER': lambda m: logger.info('Registration confirmed'),
             'PLAYLIST_UPDATE': self.handle_playlist_update,
-            'OVERLAY_UPDATE': self.handle_overlay_update
+            'OVERLAY_UPDATE': self.handle_overlay_update,
+            'EMERGENCY_BROADCAST': self.handle_emergency_broadcast,
+            'EMERGENCY_CLEAR': self.handle_emergency_clear
         }
         
         handler = handlers.get(msg_type)
@@ -384,6 +402,67 @@ class MakerScreenClient:
             self.display_manager.show_overlay(data)
         except Exception as e:
             logger.error(f"Error handling overlay update: {e}")
+    
+    async def handle_emergency_broadcast(self, message):
+        """Handle emergency broadcast from server - highest priority"""
+        try:
+            data = message.get('data', {})
+            broadcast_id = data.get('id')
+            title = data.get('title', 'EMERGENCY')
+            msg = data.get('message', '')
+            priority = data.get('priority', 'High')
+            emergency_type = data.get('type', 'Alert')
+            style = data.get('style', {})
+            
+            logger.warning(f'EMERGENCY BROADCAST RECEIVED: {title} - {msg}')
+            
+            # Store active emergency
+            self.active_emergency = {
+                'id': broadcast_id,
+                'title': title,
+                'message': msg,
+                'priority': priority,
+                'type': emergency_type,
+                'style': style
+            }
+            
+            # Display emergency message (interrupts all content)
+            self.display_manager.show_emergency({
+                'title': title,
+                'message': msg,
+                'style': style
+            })
+            
+            # Send acknowledgment
+            await self.send_status('emergency_received', {'broadcastId': broadcast_id})
+            
+        except Exception as e:
+            logger.error(f"Error handling emergency broadcast: {e}")
+    
+    async def handle_emergency_clear(self, message):
+        """Handle emergency clear from server"""
+        try:
+            data = message.get('data', {})
+            clear_all = data.get('clearAll', False)
+            broadcast_id = data.get('broadcastId')
+            
+            if clear_all:
+                logger.info('All emergency broadcasts cleared')
+                self.active_emergency = None
+            elif broadcast_id and self.active_emergency:
+                if self.active_emergency.get('id') == broadcast_id:
+                    logger.info(f'Emergency broadcast {broadcast_id} cleared')
+                    self.active_emergency = None
+            
+            # Clear emergency display
+            self.display_manager.clear_emergency()
+            
+            # Resume normal content
+            if self.current_playlist:
+                asyncio.create_task(self.play_playlist())
+            
+        except Exception as e:
+            logger.error(f"Error handling emergency clear: {e}")
     
     async def handle_command(self, message):
         """Handle command from server"""

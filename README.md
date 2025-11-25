@@ -400,19 +400,55 @@ For support, please:
 
 ## 🗺️ Roadmap
 
-### Version 1.1 (Planned)
-- [ ] Content scheduling and playlists
+### Version 1.1 (In Progress)
+- [x] Content scheduling and playlists (Playlist Management UI added)
 - [ ] Multi-zone display layouts
 - [x] iOS management app (see `Client/iOS/MakerScreen`)
+- [x] Client Groups for targeted content delivery
+- [x] Overlay Management UI
 - [ ] Database backend (SQL Server)
 - [ ] Advanced analytics and reporting
 
-### Version 1.2 (Planned)
+### Version 1.2 (In Progress)
 - [ ] Video content support
 - [ ] Interactive web content
 - [ ] Touch screen support
-- [ ] Emergency broadcast system
-- [ ] API for third-party integration
+- [x] Emergency broadcast system (Full implementation)
+- [x] API for third-party integration (REST API with Groups & Emergency endpoints)
+
+## 🆕 New Features (v1.1.0)
+
+### Playlist Management
+- Create and manage playlists via the WPF Management Console
+- Add content to playlists with drag-and-drop
+- Assign playlists to clients or groups
+- Schedule-based playlist activation (coming soon)
+
+### Overlay System
+- Create dynamic overlays (text, datetime, ticker, SQL data, etc.)
+- Position and style overlays on screen
+- Assign overlays to specific clients
+
+### Client Groups
+- Group displays by location, department, or purpose
+- Push content to groups simultaneously
+- Assign default playlists to groups
+- API support for group management
+
+### Emergency Broadcast System
+- Create emergency alerts with different priority levels
+- Send broadcasts to all clients or specific groups
+- Visual styles: flashing, full-screen, colored backgrounds
+- Automatic interruption of normal content
+- Clear broadcasts individually or all at once
+
+### Enhanced REST API
+New endpoints for third-party integration:
+- `GET/POST /api/groups` - Client group management
+- `GET/POST /api/emergency` - Emergency broadcast management
+- `POST /api/emergency/{id}/send` - Send emergency broadcast
+- `POST /api/emergency/send-immediate` - Create and send immediately
+- `POST /api/emergency/clear-all` - Clear all active broadcasts
 
 ---
 
