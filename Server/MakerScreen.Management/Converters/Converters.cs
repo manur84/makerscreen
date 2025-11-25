@@ -15,6 +15,11 @@ public class ZeroToVisibilityConverter : IValueConverter
         {
             return count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
+        // Also handle null as "zero" (show message)
+        if (value == null)
+        {
+            return Visibility.Visible;
+        }
         return Visibility.Collapsed;
     }
 
@@ -69,6 +74,38 @@ public class BoolToVisibilityConverter : IValueConverter
             return v == Visibility.Visible;
         }
         return false;
+    }
+}
+
+/// <summary>
+/// Converts null to Visibility (null = Visible, not null = Collapsed)
+/// </summary>
+public class NullToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return value == null ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts not-null to Visibility (null = Collapsed, not null = Visible)
+/// </summary>
+public class NotNullToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return value != null ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
     }
 }
 

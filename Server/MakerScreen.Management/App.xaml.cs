@@ -13,6 +13,7 @@ using MakerScreen.Services.Playlist;
 using MakerScreen.Services.Overlay;
 using MakerScreen.Services.Monitor;
 using MakerScreen.Services.Discovery;
+using MakerScreen.Services.Composition;
 
 namespace MakerScreen.Management;
 
@@ -42,6 +43,7 @@ public partial class App : Application
                     services.AddSingleton<IOverlayService, OverlayService>();
                     services.AddSingleton<IClientMonitorService, ClientMonitorService>();
                     services.AddSingleton<INetworkDiscoveryService, NetworkDiscoveryService>();
+                    services.AddSingleton<IDisplayCompositionService, DisplayCompositionService>();
 
                     // Register ViewModels
                     services.AddTransient<MainViewModel>();
