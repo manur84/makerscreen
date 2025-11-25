@@ -301,7 +301,7 @@ public class DisplayCompositionService : IDisplayCompositionService
         var backgroundStyle = composition.Background.Type switch
         {
             BackgroundType.Color => $"background-color:{composition.Background.Color};",
-            BackgroundType.Image => $"background-image:url('data:image/png;base64,{(composition.Background.ImageData != null ? Convert.ToBase64String(composition.Background.ImageData) : "")}'); background-size:{composition.Background.ScaleMode.ToString().ToLower()};",
+            BackgroundType.Image => $"background-image:url('data:image/png;base64,{(composition.Background.ImageData != null ? Convert.ToBase64String(composition.Background.ImageData) : "")}'); background-size:{MapScaleModeToCss(composition.Background.ScaleMode)}; background-repeat:no-repeat; background-position:center;",
             _ => ""
         };
 
@@ -309,5 +309,18 @@ public class DisplayCompositionService : IDisplayCompositionService
             <div style='position:relative; width:{composition.Resolution.Width}px; height:{composition.Resolution.Height}px; {backgroundStyle}'>
                 {overlaysHtml}
             </div>";
+    }
+
+    private static string MapScaleModeToCss(ImageScaleMode scaleMode)
+    {
+        return scaleMode switch
+        {
+            ImageScaleMode.Fill => "cover",
+            ImageScaleMode.Fit => "contain",
+            ImageScaleMode.Stretch => "100% 100%",
+            ImageScaleMode.Center => "auto",
+            ImageScaleMode.Tile => "auto",
+            _ => "cover"
+        };
     }
 }

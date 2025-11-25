@@ -952,16 +952,22 @@ public partial class MainViewModel : ObservableObject
             if (openFileDialog.ShowDialog() == true)
             {
                 var imageData = await File.ReadAllBytesAsync(openFileDialog.FileName);
+                var fileName = Path.GetFileName(openFileDialog.FileName);
+                var extension = Path.GetExtension(openFileDialog.FileName).ToLower();
                 
+                // First update the composition with the new background
                 SelectedComposition.Background.Type = BackgroundType.Image;
                 SelectedComposition.Background.ImageData = imageData;
                 
-                // Also add as content item for reference
-                var fileName = Path.GetFileName(openFileDialog.FileName);
-                var extension = Path.GetExtension(openFileDialog.FileName).ToLower();
+                if (_compositionService != null)
+                {
+                    await _compositionService.UpdateCompositionAsync(SelectedComposition);
+                }
+                
+                // Only add as content item after composition update succeeds
                 var contentItem = new ContentItem
                 {
-                    Name = fileName,
+                    Name = $"bg_{fileName}",
                     Type = ContentType.Image,
                     Data = imageData,
                     MimeType = DetermineMimeType(extension)
@@ -969,6 +975,7 @@ public partial class MainViewModel : ObservableObject
                 await _contentService.AddContentAsync(contentItem);
                 SelectedComposition.Background.ImageContentId = contentItem.Id;
                 
+                // Update composition again with content reference
                 if (_compositionService != null)
                 {
                     await _compositionService.UpdateCompositionAsync(SelectedComposition);
@@ -1139,6 +1146,7 @@ public partial class MainViewModel : ObservableObject
     private void MoveOverlayUp()
     {
         if (SelectedCompositionOverlay == null || SelectedComposition == null) return;
+        if (SelectedComposition.Overlays.Count == 0) return;
         
         var maxZIndex = SelectedComposition.Overlays.Max(o => o.ZIndex);
         if (SelectedCompositionOverlay.ZIndex < maxZIndex)

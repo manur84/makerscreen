@@ -925,7 +925,7 @@
                                                FontSize="16"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
-                                               Visibility="{Binding SelectedComposition, Converter={StaticResource ZeroToVisibilityConverter}}"/>
+                                               Visibility="{Binding SelectedComposition, Converter={StaticResource NullToVisibilityConverter}}"/>
                                 </Grid>
                             </Border>
                             
@@ -944,7 +944,7 @@
                                 <TextBox Text="{Binding SelectedComposition.Background.Color, UpdateSourceTrigger=PropertyChanged}"
                                          Width="80"
                                          Padding="5"
-                                         IsEnabled="{Binding SelectedComposition, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                         Visibility="{Binding SelectedComposition, Converter={StaticResource NotNullToVisibilityConverter}}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
