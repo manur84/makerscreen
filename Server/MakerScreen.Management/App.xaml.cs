@@ -193,10 +193,26 @@ public partial class App : Application
     {
         try
         {
+            // Get the executable path with multiple fallbacks
+            var executablePath = Environment.ProcessPath 
+                ?? Process.GetCurrentProcess().MainModule?.FileName
+                ?? AppDomain.CurrentDomain.BaseDirectory + AppDomain.CurrentDomain.FriendlyName + ".exe";
+            
+            if (string.IsNullOrEmpty(executablePath) || !System.IO.File.Exists(executablePath))
+            {
+                MessageBox.Show(
+                    "Der Pfad zur ausführbaren Datei konnte nicht ermittelt werden.\n" +
+                    "Bitte starten Sie die Anwendung manuell als Administrator.",
+                    "Fehler",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                return;
+            }
+            
             var processInfo = new ProcessStartInfo
             {
                 UseShellExecute = true,
-                FileName = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName,
+                FileName = executablePath,
                 Verb = "runas" // Request elevation
             };
 

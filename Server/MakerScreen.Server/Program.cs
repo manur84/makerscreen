@@ -132,10 +132,22 @@ class Program
         {
             Console.WriteLine("Neustart als Administrator...");
             
+            // Get the executable path with multiple fallbacks
+            var executablePath = Environment.ProcessPath 
+                ?? Process.GetCurrentProcess().MainModule?.FileName
+                ?? AppDomain.CurrentDomain.BaseDirectory + AppDomain.CurrentDomain.FriendlyName + ".exe";
+            
+            if (string.IsNullOrEmpty(executablePath) || !File.Exists(executablePath))
+            {
+                Console.WriteLine("Fehler: Der Pfad zur ausführbaren Datei konnte nicht ermittelt werden.");
+                Console.WriteLine("Bitte starten Sie die Anwendung manuell als Administrator.");
+                return;
+            }
+            
             var processInfo = new ProcessStartInfo
             {
                 UseShellExecute = true,
-                FileName = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName,
+                FileName = executablePath,
                 Verb = "runas" // Request elevation
             };
 

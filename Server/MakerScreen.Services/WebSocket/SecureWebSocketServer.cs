@@ -88,6 +88,9 @@ public class SecureWebSocketServer : IWebSocketServer
             {
                 _listener.Stop();
             }
+            // Dispose the old listener to prevent resource leaks
+            _listener.Close();
+            
             _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{_port}/");
             _listener.Start();
