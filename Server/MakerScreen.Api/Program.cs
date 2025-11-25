@@ -6,6 +6,8 @@ using MakerScreen.Services.Playlist;
 using MakerScreen.Services.Overlay;
 using MakerScreen.Services.Monitor;
 using MakerScreen.Services.Discovery;
+using MakerScreen.Services.Group;
+using MakerScreen.Services.Emergency;
 
 namespace MakerScreen.Api;
 
@@ -36,6 +38,8 @@ public class Program
         builder.Services.AddSingleton<IOverlayService, OverlayService>();
         builder.Services.AddSingleton<IClientMonitorService, ClientMonitorService>();
         builder.Services.AddSingleton<INetworkDiscoveryService, NetworkDiscoveryService>();
+        builder.Services.AddSingleton<IClientGroupService, ClientGroupService>();
+        builder.Services.AddSingleton<IEmergencyBroadcastService, EmergencyBroadcastService>();
 
         // Add hosted service for WebSocket server
         builder.Services.AddHostedService<WebSocketHostedService>();

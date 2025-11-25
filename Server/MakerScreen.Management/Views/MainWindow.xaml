@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:MakerScreen.Management.ViewModels"
-        Title="MakerScreen Management Console" Height="700" Width="1200"
+        Title="MakerScreen Management Console" Height="800" Width="1400"
         WindowStartupLocation="CenterScreen">
     
     <Window.Resources>
@@ -27,6 +27,13 @@
             <Setter Property="Margin" Value="0,0,0,15"/>
         </Style>
         
+        <Style x:Key="SubHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#555555"/>
+            <Setter Property="Margin" Value="0,10,0,10"/>
+        </Style>
+        
         <Style x:Key="PrimaryButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
             <Setter Property="Foreground" Value="White"/>
@@ -47,6 +54,60 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="DangerButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource ErrorBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#D32F2F"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F57C00"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -84,141 +145,649 @@
             </Grid>
         </Border>
         
-        <!-- Main Content -->
-        <Grid Grid.Row="1" Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="3*"/>
-            </Grid.ColumnDefinitions>
+        <!-- Main Content with TabControl -->
+        <TabControl Grid.Row="1" Margin="10">
             
-            <!-- Left Panel - Deployment & Content -->
-            <StackPanel Grid.Column="0">
-                
-                <!-- Deployment Section -->
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Client Deployment" Style="{StaticResource HeaderStyle}"/>
+            <!-- Dashboard Tab -->
+            <TabItem Header="📊 Dashboard">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Left Panel - Deployment & Content -->
+                    <StackPanel Grid.Column="0">
                         
-                        <Button Content="🚀 Auto-Deploy Clients"
-                                Command="{Binding AutoDeployClientsCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                ToolTip="Automatically discover and deploy to Raspberry Pi devices on the network"/>
+                        <!-- Deployment Section -->
+                        <Border Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Client Deployment" Style="{StaticResource HeaderStyle}"/>
+                                
+                                <Button Content="🚀 Auto-Deploy Clients"
+                                        Command="{Binding AutoDeployClientsCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        ToolTip="Automatically discover and deploy to Raspberry Pi devices on the network"/>
+                                
+                                <Button Content="📦 Create Deployment Package"
+                                        Command="{Binding CreateDeploymentPackageCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        ToolTip="Create a deployment package for manual installation"/>
+                                
+                                <Button Content="💿 Generate Raspberry Pi Image"
+                                        Command="{Binding GenerateRaspberryPiImageCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        ToolTip="Generate a bootable Raspberry Pi image with pre-installed client"/>
+                                
+                                <TextBlock Text="Deploy clients with zero manual intervention." 
+                                           TextWrapping="Wrap"
+                                           FontSize="12"
+                                           Foreground="#666666"
+                                           Margin="0,15,0,0"/>
+                            </StackPanel>
+                        </Border>
                         
-                        <Button Content="📦 Create Deployment Package"
-                                Command="{Binding CreateDeploymentPackageCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                ToolTip="Create a deployment package for manual installation"/>
-                        
-                        <Button Content="💿 Generate Raspberry Pi Image"
-                                Command="{Binding GenerateRaspberryPiImageCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                ToolTip="Generate a bootable Raspberry Pi image with pre-installed client"/>
-                        
-                        <TextBlock Text="Deploy clients with zero manual intervention. The server will automatically discover Raspberry Pi devices and install the client software." 
-                                   TextWrapping="Wrap"
-                                   FontSize="12"
-                                   Foreground="#666666"
-                                   Margin="0,15,0,0"/>
+                        <!-- Quick Content Push -->
+                        <Border Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Quick Content Push" Style="{StaticResource HeaderStyle}"/>
+                                
+                                <Button Content="➕ Add Content"
+                                        Command="{Binding AddContentCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                                
+                                <ListBox ItemsSource="{Binding ContentItems}"
+                                         SelectedItem="{Binding SelectedContent}"
+                                         Height="150"
+                                         BorderBrush="#E0E0E0"
+                                         BorderThickness="1"
+                                         Margin="0,10,0,0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding Type}" FontSize="10" Foreground="#666666"/>
+                                                </StackPanel>
+                                                
+                                                <Button Grid.Column="1"
+                                                        Content="Push"
+                                                        Command="{Binding DataContext.PushContentToClientsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource PrimaryButtonStyle}"
+                                                        Padding="10,5"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
-                
-                <!-- Content Management Section -->
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Content Management" Style="{StaticResource HeaderStyle}"/>
-                        
-                        <Button Content="➕ Add Content"
-                                Command="{Binding AddContentCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"/>
-                        
-                        <TextBlock Text="Content Library" 
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Margin="0,15,0,10"/>
-                        
-                        <ListBox ItemsSource="{Binding ContentItems}"
-                                 Height="200"
-                                 BorderBrush="#E0E0E0"
-                                 BorderThickness="1">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="5">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        
-                                        <StackPanel Grid.Column="0">
+                    
+                    <!-- Right Panel - Connected Clients -->
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,15">
+                                <TextBlock Text="Connected Clients" Style="{StaticResource HeaderStyle}"/>
+                                <Button Content="🔄 Refresh"
+                                        Command="{Binding RefreshClientsCommand}"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Padding="15,5"/>
+                            </Grid>
+                            
+                            <DataGrid ItemsSource="{Binding Clients}"
+                                      SelectedItem="{Binding SelectedClient}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      GridLinesVisibility="None"
+                                      HeadersVisibility="Column"
+                                      BorderThickness="0"
+                                      Background="White"
+                                      Height="300">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="IP Address" Binding="{Binding IpAddress}" Width="150"/>
+                                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                                    <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="80"/>
+                                    <DataGridTextColumn Header="Last Seen" Binding="{Binding LastSeen, StringFormat='{}{0:HH:mm:ss}'}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            
+                            <TextBlock Text="No clients connected yet."
+                                       FontSize="14"
+                                       Foreground="#999999"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,20,0,0"
+                                       Visibility="{Binding Clients.Count, Converter={StaticResource ZeroToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+            
+            <!-- Playlists Tab -->
+            <TabItem Header="📋 Playlists">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Playlist List -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Playlists" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <Button Content="➕ Create Playlist"
+                                    Command="{Binding CreatePlaylistCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"/>
+                            
+                            <ListBox ItemsSource="{Binding Playlists}"
+                                     SelectedItem="{Binding SelectedPlaylist}"
+                                     Height="400"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"
+                                     Margin="0,10,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="5">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                            <TextBlock FontSize="10" Foreground="#666666">
+                                                <Run Text="{Binding Items.Count, Mode=OneWay}"/>
+                                                <Run Text=" items"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#888888" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Playlist Details -->
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Playlist Details" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Playlist Items -->
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Playlist Items" Style="{StaticResource SubHeaderStyle}"/>
+                                    <ListBox ItemsSource="{Binding SelectedPlaylist.Items}"
+                                             Height="250"
+                                             BorderBrush="#E0E0E0"
+                                             BorderThickness="1">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="5">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <TextBlock Grid.Column="0" Text="{Binding Order}" FontWeight="Bold" Margin="0,0,10,0"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding ContentId}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Grid.Column="2" Foreground="#666666">
+                                                        <Run Text="{Binding Duration}"/>
+                                                        <Run Text="s"/>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </StackPanel>
+                                
+                                <!-- Available Content -->
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="Available Content" Style="{StaticResource SubHeaderStyle}"/>
+                                    <ListBox ItemsSource="{Binding ContentItems}"
+                                             SelectedItem="{Binding SelectedContent}"
+                                             Height="200"
+                                             BorderBrush="#E0E0E0"
+                                             BorderThickness="1">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="5">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding Type}" FontSize="10" Foreground="#666666"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    
+                                    <Button Content="➕ Add to Playlist"
+                                            Command="{Binding AddContentToPlaylistCommand}"
+                                            CommandParameter="{Binding SelectedContent}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                            <!-- Playlist Actions -->
+                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                <Button Content="📤 Assign to All Clients"
+                                        Command="{Binding AssignPlaylistToClientsCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                                
+                                <Button Content="📤 Assign to Group"
+                                        Command="{Binding AssignPlaylistToGroupCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                                
+                                <Button Content="🗑️ Delete Playlist"
+                                        Command="{Binding DeletePlaylistCommand}"
+                                        CommandParameter="{Binding SelectedPlaylist}"
+                                        Style="{StaticResource DangerButtonStyle}"/>
+                            </StackPanel>
+                            
+                            <!-- Schedule Section -->
+                            <TextBlock Text="Schedule" Style="{StaticResource SubHeaderStyle}" Margin="0,20,0,0"/>
+                            <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="10" CornerRadius="4">
+                                <StackPanel>
+                                    <CheckBox Content="Enable Schedule" 
+                                              IsChecked="{Binding SelectedPlaylist.IsActive}"
+                                              Margin="0,5"/>
+                                    <TextBlock Text="Schedule settings coming soon..." 
+                                               FontSize="12" 
+                                               Foreground="#999999"
+                                               FontStyle="Italic"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+            
+            <!-- Overlays Tab -->
+            <TabItem Header="🎨 Overlays">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Overlay List -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Overlays" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <Button Content="➕ Create Overlay"
+                                    Command="{Binding CreateOverlayCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"/>
+                            
+                            <ListBox ItemsSource="{Binding Overlays}"
+                                     SelectedItem="{Binding SelectedOverlay}"
+                                     Height="400"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"
+                                     Margin="0,10,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="5">
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
                                             <TextBlock Text="{Binding Type}" FontSize="10" Foreground="#666666"/>
                                         </StackPanel>
-                                        
-                                        <Button Grid.Column="1"
-                                                Content="Push"
-                                                Command="{Binding DataContext.PushContentToClientsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource PrimaryButtonStyle}"
-                                                Padding="10,5"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Overlay Editor -->
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Overlay Editor" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Overlay Properties -->
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Properties" Style="{StaticResource SubHeaderStyle}"/>
+                                    
+                                    <TextBlock Text="Name" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedOverlay.Name, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Type" FontSize="12" Margin="0,5,0,2"/>
+                                    <ComboBox SelectedItem="{Binding SelectedOverlay.Type}"
+                                              Padding="5" Margin="0,0,0,10">
+                                        <ComboBoxItem Content="Text"/>
+                                        <ComboBoxItem Content="DateTime"/>
+                                        <ComboBoxItem Content="Weather"/>
+                                        <ComboBoxItem Content="Ticker"/>
+                                        <ComboBoxItem Content="SqlData"/>
+                                        <ComboBoxItem Content="Html"/>
+                                        <ComboBoxItem Content="QrCode"/>
+                                        <ComboBoxItem Content="Logo"/>
+                                    </ComboBox>
+                                    
+                                    <TextBlock Text="Content" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedOverlay.Content, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="80"
+                                             AcceptsReturn="True"
+                                             TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Refresh Interval (seconds)" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedOverlay.RefreshInterval, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                </StackPanel>
+                                
+                                <!-- Overlay Style -->
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="Style" Style="{StaticResource SubHeaderStyle}"/>
+                                    
+                                    <TextBlock Text="Font Family" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedOverlay.Style.FontFamily, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Font Size" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedOverlay.Style.FontSize, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Font Color" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedOverlay.Style.FontColor, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Background Color" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedOverlay.Style.BackgroundColor, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                            <!-- Overlay Actions -->
+                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                <Button Content="💾 Save Overlay"
+                                        Command="{Binding SaveOverlayCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                                
+                                <Button Content="📤 Assign to Clients"
+                                        Command="{Binding AssignOverlayToClientsCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                                
+                                <Button Content="🗑️ Delete Overlay"
+                                        Command="{Binding DeleteOverlayCommand}"
+                                        CommandParameter="{Binding SelectedOverlay}"
+                                        Style="{StaticResource DangerButtonStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
             
-            <!-- Right Panel - Connected Clients -->
-            <Border Grid.Column="1" Style="{StaticResource CardStyle}">
-                <StackPanel>
-                    <Grid Margin="0,0,0,15">
-                        <TextBlock Text="Connected Clients" Style="{StaticResource HeaderStyle}"/>
-                        <Button Content="🔄 Refresh"
-                                Command="{Binding RefreshClientsCommand}"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Top"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Padding="15,5"/>
-                    </Grid>
+            <!-- Client Groups Tab -->
+            <TabItem Header="👥 Groups">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
                     
-                    <DataGrid ItemsSource="{Binding Clients}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              GridLinesVisibility="None"
-                              HeadersVisibility="Column"
-                              BorderThickness="0"
-                              Background="White">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="IP Address" Binding="{Binding IpAddress}" Width="150"/>
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100">
-                                <DataGridTextColumn.CellStyle>
-                                    <Style TargetType="DataGridCell">
-                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Status}" Value="Offline">
-                                                <Setter Property="Foreground" Value="#999999"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Error">
-                                                <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DataGridTextColumn.CellStyle>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="80"/>
-                            <DataGridTextColumn Header="Last Seen" Binding="{Binding LastSeen, StringFormat='{}{0:HH:mm:ss}'}" Width="100"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <!-- Group List -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Client Groups" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <Button Content="➕ Create Group"
+                                    Command="{Binding CreateGroupCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"/>
+                            
+                            <ListBox ItemsSource="{Binding ClientGroups}"
+                                     SelectedItem="{Binding SelectedGroup}"
+                                     Height="400"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"
+                                     Margin="0,10,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="5">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                            <TextBlock FontSize="10" Foreground="#666666">
+                                                <Run Text="{Binding ClientIds.Count, Mode=OneWay}"/>
+                                                <Run Text=" clients"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#888888" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Border>
                     
-                    <TextBlock Text="No clients connected yet. Deploy clients using the deployment options on the left."
-                               FontSize="14"
-                               Foreground="#999999"
-                               HorizontalAlignment="Center"
-                               Margin="0,20,0,0"
-                               Visibility="{Binding Clients.Count, Converter={StaticResource ZeroToVisibilityConverter}}"/>
-                </StackPanel>
-            </Border>
-        </Grid>
+                    <!-- Group Details -->
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Group Details" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Group Clients -->
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Clients in Group" Style="{StaticResource SubHeaderStyle}"/>
+                                    <ListBox ItemsSource="{Binding SelectedGroup.ClientIds}"
+                                             Height="250"
+                                             BorderBrush="#E0E0E0"
+                                             BorderThickness="1">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" Margin="5"/>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </StackPanel>
+                                
+                                <!-- Available Clients -->
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="Available Clients" Style="{StaticResource SubHeaderStyle}"/>
+                                    <ListBox ItemsSource="{Binding Clients}"
+                                             SelectedItem="{Binding SelectedClient}"
+                                             Height="200"
+                                             BorderBrush="#E0E0E0"
+                                             BorderThickness="1">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="5">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding IpAddress}" FontSize="10" Foreground="#666666"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    
+                                    <Button Content="➕ Add to Group"
+                                            Command="{Binding AddClientToGroupCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                            <!-- Group Actions -->
+                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                <Button Content="📤 Push Content"
+                                        Command="{Binding PushContentToGroupCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                                
+                                <Button Content="📋 Assign Playlist"
+                                        Command="{Binding AssignPlaylistToGroupCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                                
+                                <Button Content="🗑️ Delete Group"
+                                        Command="{Binding DeleteGroupCommand}"
+                                        CommandParameter="{Binding SelectedGroup}"
+                                        Style="{StaticResource DangerButtonStyle}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+            
+            <!-- Emergency Broadcast Tab -->
+            <TabItem Header="🚨 Emergency">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Broadcast List -->
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Emergency Broadcasts" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <Button Content="➕ Create Broadcast"
+                                    Command="{Binding CreateEmergencyBroadcastCommand}"
+                                    Style="{StaticResource DangerButtonStyle}"/>
+                            
+                            <ListBox ItemsSource="{Binding EmergencyBroadcasts}"
+                                     SelectedItem="{Binding SelectedEmergencyBroadcast}"
+                                     Height="350"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"
+                                     Margin="0,10,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="5">
+                                            <Grid>
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                                                <Ellipse Width="10" Height="10" 
+                                                         Fill="{StaticResource ErrorBrush}" 
+                                                         HorizontalAlignment="Right"
+                                                         Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            </Grid>
+                                            <TextBlock Text="{Binding Priority}" FontSize="10" Foreground="#666666"/>
+                                            <TextBlock Text="{Binding Message}" FontSize="11" Foreground="#888888" 
+                                                       TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            
+                            <Button Content="🔇 Clear All Broadcasts"
+                                    Command="{Binding ClearAllEmergencyBroadcastsCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Broadcast Editor -->
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Emergency Broadcast Editor" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Broadcast Properties -->
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Title" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedEmergencyBroadcast.Title, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Message" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedEmergencyBroadcast.Message, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="100"
+                                             AcceptsReturn="True"
+                                             TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Priority" FontSize="12" Margin="0,5,0,2"/>
+                                    <ComboBox SelectedItem="{Binding SelectedEmergencyBroadcast.Priority}"
+                                              Padding="5" Margin="0,0,0,10">
+                                        <ComboBoxItem Content="Low"/>
+                                        <ComboBoxItem Content="Medium"/>
+                                        <ComboBoxItem Content="High"/>
+                                        <ComboBoxItem Content="Critical"/>
+                                    </ComboBox>
+                                    
+                                    <TextBlock Text="Type" FontSize="12" Margin="0,5,0,2"/>
+                                    <ComboBox SelectedItem="{Binding SelectedEmergencyBroadcast.Type}"
+                                              Padding="5" Margin="0,0,0,10">
+                                        <ComboBoxItem Content="Info"/>
+                                        <ComboBoxItem Content="Alert"/>
+                                        <ComboBoxItem Content="Warning"/>
+                                        <ComboBoxItem Content="Emergency"/>
+                                        <ComboBoxItem Content="Evacuation"/>
+                                    </ComboBox>
+                                </StackPanel>
+                                
+                                <!-- Broadcast Style -->
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="Style" Style="{StaticResource SubHeaderStyle}"/>
+                                    
+                                    <TextBlock Text="Background Color" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedEmergencyBroadcast.Style.BackgroundColor, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Text Color" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedEmergencyBroadcast.Style.TextColor, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Font Size" FontSize="12" Margin="0,5,0,2"/>
+                                    <TextBox Text="{Binding SelectedEmergencyBroadcast.Style.FontSize, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" Margin="0,0,0,10"/>
+                                    
+                                    <CheckBox Content="Show Flashing" 
+                                              IsChecked="{Binding SelectedEmergencyBroadcast.Style.ShowFlashing}"
+                                              Margin="0,10"/>
+                                    
+                                    <CheckBox Content="Full Screen" 
+                                              IsChecked="{Binding SelectedEmergencyBroadcast.Style.ShowFullScreen}"
+                                              Margin="0,5"/>
+                                </StackPanel>
+                            </Grid>
+                            
+                            <!-- Broadcast Actions -->
+                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                <Button Content="🚨 SEND TO ALL CLIENTS"
+                                        Command="{Binding SendEmergencyBroadcastCommand}"
+                                        Style="{StaticResource DangerButtonStyle}"
+                                        FontSize="16"/>
+                                
+                                <Button Content="📤 Send to Group"
+                                        Command="{Binding SendEmergencyToGroupCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"/>
+                                
+                                <Button Content="🔇 Clear This Broadcast"
+                                        Command="{Binding ClearEmergencyBroadcastCommand}"
+                                        CommandParameter="{Binding SelectedEmergencyBroadcast}"
+                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                            </StackPanel>
+                            
+                            <TextBlock Text="⚠️ Emergency broadcasts will immediately interrupt all content on targeted displays."
+                                       Foreground="{StaticResource ErrorBrush}"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Margin="0,20,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+            
+        </TabControl>
         
         <!-- Status Bar -->
         <Border Grid.Row="2" Background="#333333" Padding="10,5">
@@ -235,7 +804,7 @@
                 </StackPanel>
                 
                 <TextBlock Grid.Column="2" 
-                           Text="MakerScreen v1.0.0" 
+                           Text="MakerScreen v1.1.0" 
                            Foreground="#999999"
                            FontSize="12"/>
             </Grid>
