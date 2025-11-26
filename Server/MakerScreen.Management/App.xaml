@@ -16,6 +16,7 @@
             <converters:ClientStatusToBrushConverter x:Key="ClientStatusToBrushConverter"/>
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
             <converters:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter"/>
+            <converters:OverlayTypeToVisibilityConverter x:Key="OverlayTypeToVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

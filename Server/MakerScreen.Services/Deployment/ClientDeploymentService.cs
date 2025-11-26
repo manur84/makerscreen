@@ -157,28 +157,206 @@ public class ClientDeploymentService : IClientDeploymentService
 
         try
         {
-            var imagePath = Path.Combine(_deploymentPath, $"makerscreen_{package.Version}.img");
+            var outputPath = Path.Combine(_deploymentPath, $"makerscreen_{package.Version}_{DateTime.UtcNow:yyyyMMddHHmmss}");
+            Directory.CreateDirectory(outputPath);
             
-            // This would create a custom Raspberry Pi OS image with:
-            // - Pre-installed Python client
-            // - Auto-start configuration
-            // - Network configuration
-            // - SSH enabled
+            // Generate all necessary files for the deployment package
+            var clientFiles = GenerateClientFiles(package.Configuration);
             
-            // For demonstration, we'll create a script-based installer
+            // Write all client files to the output directory
+            foreach (var file in clientFiles)
+            {
+                var filePath = Path.Combine(outputPath, file.Key);
+                await File.WriteAllTextAsync(filePath, file.Value, cancellationToken);
+            }
+            
+            // Create a comprehensive config.json with all settings
+            var configJson = GenerateComprehensiveConfig(package.Configuration);
+            await File.WriteAllTextAsync(Path.Combine(outputPath, "config.json"), configJson, cancellationToken);
+            
+            // Create the installer script
             var installerScript = GenerateInstallerScript(package);
-            var scriptPath = Path.Combine(_deploymentPath, "install.sh");
+            var scriptPath = Path.Combine(outputPath, "install.sh");
             await File.WriteAllTextAsync(scriptPath, installerScript, cancellationToken);
             
-            _logger.LogInformation("Installer script created at {ScriptPath}", scriptPath);
+            // Create a first-boot setup script
+            var firstBootScript = GenerateFirstBootScript(package.Configuration);
+            await File.WriteAllTextAsync(Path.Combine(outputPath, "firstboot.sh"), firstBootScript, cancellationToken);
             
-            return scriptPath;
+            // Create a README file with instructions
+            var readme = GenerateReadme(package);
+            await File.WriteAllTextAsync(Path.Combine(outputPath, "README.md"), readme, cancellationToken);
+            
+            // Create zip package of all files
+            var zipPath = Path.Combine(_deploymentPath, $"makerscreen_rpi_{package.Version}_{DateTime.UtcNow:yyyyMMddHHmmss}.zip");
+            if (File.Exists(zipPath))
+            {
+                File.Delete(zipPath);
+            }
+            ZipFile.CreateFromDirectory(outputPath, zipPath);
+            
+            _logger.LogInformation("Raspberry Pi deployment package created at {ZipPath}", zipPath);
+            
+            return zipPath;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating Raspberry Pi image");
             throw;
         }
+    }
+
+    private string GenerateComprehensiveConfig(Dictionary<string, string> configuration)
+    {
+        var config = new
+        {
+            server = new
+            {
+                url = configuration.GetValueOrDefault("serverUrl", "ws://localhost:8443"),
+                reconnectDelay = int.Parse(configuration.GetValueOrDefault("reconnectDelay", "5")),
+                heartbeatInterval = int.Parse(configuration.GetValueOrDefault("heartbeatInterval", "30"))
+            },
+            client = new
+            {
+                version = configuration.GetValueOrDefault("clientVersion", ClientVersion),
+                autoStart = bool.Parse(configuration.GetValueOrDefault("autoStart", "true")),
+                logLevel = configuration.GetValueOrDefault("logLevel", "INFO")
+            },
+            display = new
+            {
+                rotation = int.Parse(configuration.GetValueOrDefault("displayRotation", "0")),
+                fullscreen = bool.Parse(configuration.GetValueOrDefault("fullscreen", "true")),
+                enableHdmiCec = bool.Parse(configuration.GetValueOrDefault("enableHdmiCec", "true"))
+            },
+            webui = new
+            {
+                enabled = bool.Parse(configuration.GetValueOrDefault("enableLocalWebUi", "true")),
+                port = int.Parse(configuration.GetValueOrDefault("localWebUiPort", "5000"))
+            }
+        };
+        
+        return JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private string GenerateFirstBootScript(Dictionary<string, string> configuration)
+    {
+        var serverUrl = configuration.GetValueOrDefault("serverUrl", "ws://localhost:8443");
+        var rotation = configuration.GetValueOrDefault("displayRotation", "0");
+        
+        return $@"#!/bin/bash
+# MakerScreen First Boot Configuration Script
+# This script runs automatically on first boot to configure the Raspberry Pi
+
+set -e
+
+echo '========================================='
+echo 'MakerScreen First Boot Setup'
+echo '========================================='
+
+# Expand filesystem to use full SD card
+sudo raspi-config --expand-rootfs
+
+# Set display rotation if needed
+ROTATION='{rotation}'
+if [ ""$ROTATION"" != ""0"" ]; then
+    echo ""display_rotate=$ROTATION"" | sudo tee -a /boot/config.txt
+fi
+
+# Enable SSH
+sudo systemctl enable ssh
+sudo systemctl start ssh
+
+# Disable screen blanking
+sudo raspi-config nonint do_blanking 1
+
+# Set timezone (can be customized)
+sudo timedatectl set-timezone Europe/Berlin
+
+# Update hostname to include MAC address for easy identification
+MAC=$(cat /sys/class/net/eth0/address | sed 's/://g' | tail -c 7)
+NEW_HOSTNAME=""makerscreen-$MAC""
+sudo hostnamectl set-hostname $NEW_HOSTNAME
+
+# Configure auto-login for display
+sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
+cat << 'EOF' | sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin pi --noclear %I $TERM
+EOF
+
+# Install MakerScreen client
+cd /opt/makerscreen
+chmod +x install.sh
+./install.sh
+
+# Remove first boot script from running again
+sudo rm -f /etc/profile.d/firstboot.sh
+
+echo '========================================='
+echo 'First boot setup complete!'
+echo 'Rebooting in 5 seconds...'
+echo '========================================='
+
+sleep 5
+sudo reboot
+";
+    }
+
+    private string GenerateReadme(DeploymentPackage package)
+    {
+        return $@"# MakerScreen Raspberry Pi Deployment Package
+
+## Version: {package.Version}
+## Created: {package.CreatedAt:yyyy-MM-dd HH:mm:ss} UTC
+## Package Hash: {package.Hash}
+
+## Quick Installation
+
+1. Flash Raspberry Pi OS Lite (64-bit) to your SD card
+2. Copy all files from this package to the boot partition
+3. Insert the SD card into your Raspberry Pi and power on
+4. The installation will complete automatically on first boot
+
+## Manual Installation
+
+1. Copy this entire folder to your Raspberry Pi
+2. Run the following commands:
+   ```bash
+   cd /path/to/makerscreen
+   chmod +x install.sh
+   sudo ./install.sh
+   ```
+
+## Configuration
+
+Edit `config.json` to customize settings before installation:
+
+- `server.url` - WebSocket server URL
+- `display.rotation` - Screen rotation (0, 90, 180, 270)
+- `display.fullscreen` - Run in fullscreen mode
+- `client.autoStart` - Start client automatically on boot
+
+## Files Included
+
+- `client.py` - Main MakerScreen client application
+- `config.json` - Configuration settings
+- `requirements.txt` - Python dependencies
+- `makerscreen.service` - Systemd service file
+- `install.sh` - Installation script
+- `firstboot.sh` - First boot configuration script
+
+## Support
+
+For issues and documentation, visit the MakerScreen repository.
+
+## Server Connection
+
+This package is configured to connect to:
+{package.Configuration.GetValueOrDefault("serverUrl", "ws://localhost:8443")}
+
+Make sure this address is accessible from your Raspberry Pi network.
+";
     }
 
     private Dictionary<string, string> GenerateClientFiles(Dictionary<string, string> configuration)

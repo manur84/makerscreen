@@ -72,6 +72,18 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isPreviewMode = false;
 
+    /// <summary>
+    /// Zoom level for the scene editor canvas (range: 0.1 to 2.0)
+    /// </summary>
+    [ObservableProperty]
+    private double _zoomLevel = 0.35;
+
+    /// <summary>
+    /// Server URL for Raspberry Pi deployment. Set to auto-detect if left empty or at default.
+    /// </summary>
+    [ObservableProperty]
+    private string _raspberryPiServerUrl = "ws://localhost:8443";
+
     public ObservableCollection<SignageClient> Clients { get; } = new();
     public ObservableCollection<ContentItem> ContentItems { get; } = new();
     public ObservableCollection<Playlist> Playlists { get; } = new();
@@ -223,10 +235,27 @@ public partial class MainViewModel : ObservableObject
         {
             StatusMessage = "Generating Raspberry Pi image...";
 
+            // Use the configured server URL from the ViewModel
+            var serverUrl = RaspberryPiServerUrl;
+            if (string.IsNullOrWhiteSpace(serverUrl) || serverUrl == "ws://localhost:8443")
+            {
+                // Auto-detect local server IP asynchronously when using default localhost
+                serverUrl = await GetLocalServerUrlAsync();
+            }
+
             var config = new Dictionary<string, string>
             {
-                ["serverUrl"] = "ws://YOUR_SERVER_IP:8443",
-                ["autoStart"] = "true"
+                ["serverUrl"] = serverUrl,
+                ["autoStart"] = "true",
+                ["clientVersion"] = "1.0.0",
+                ["displayRotation"] = "0",
+                ["fullscreen"] = "true",
+                ["enableHdmiCec"] = "true",
+                ["enableLocalWebUi"] = "true",
+                ["localWebUiPort"] = "5000",
+                ["logLevel"] = "INFO",
+                ["heartbeatInterval"] = "30",
+                ["reconnectDelay"] = "5"
             };
 
             var package = await _deploymentService.CreateDeploymentPackageAsync(config);
@@ -1532,6 +1561,97 @@ public partial class MainViewModel : ObservableObject
             SceneTemplates.Add(template);
         }
     }
+
+    #region Zoom Commands
+
+    private const double MIN_ZOOM = 0.1;
+    private const double MAX_ZOOM = 2.0;
+    private const double ZOOM_STEP = 0.1;
+    private const double DEFAULT_ZOOM = 0.35;
+
+    /// <summary>
+    /// Zooms in on the scene editor canvas
+    /// </summary>
+    [RelayCommand]
+    private void ZoomIn()
+    {
+        if (ZoomLevel < MAX_ZOOM)
+        {
+            ZoomLevel = Math.Min(ZoomLevel + ZOOM_STEP, MAX_ZOOM);
+            StatusMessage = $"Zoom: {ZoomLevel:P0}";
+        }
+    }
+
+    /// <summary>
+    /// Zooms out on the scene editor canvas
+    /// </summary>
+    [RelayCommand]
+    private void ZoomOut()
+    {
+        if (ZoomLevel > MIN_ZOOM)
+        {
+            ZoomLevel = Math.Max(ZoomLevel - ZOOM_STEP, MIN_ZOOM);
+            StatusMessage = $"Zoom: {ZoomLevel:P0}";
+        }
+    }
+
+    /// <summary>
+    /// Resets the zoom level to the default value
+    /// </summary>
+    [RelayCommand]
+    private void ResetZoom()
+    {
+        ZoomLevel = DEFAULT_ZOOM;
+        StatusMessage = $"Zoom reset to {ZoomLevel:P0}";
+    }
+
+    /// <summary>
+    /// Sets the zoom level to fit the scene in the viewport
+    /// </summary>
+    [RelayCommand]
+    private void ZoomToFit()
+    {
+        // Calculate zoom level to fit typical viewport (800x600)
+        if (SelectedComposition != null)
+        {
+            var scaleX = 700.0 / SelectedComposition.Resolution.Width;
+            var scaleY = 500.0 / SelectedComposition.Resolution.Height;
+            ZoomLevel = Math.Min(scaleX, scaleY);
+            ZoomLevel = Math.Max(MIN_ZOOM, Math.Min(MAX_ZOOM, ZoomLevel));
+            StatusMessage = $"Zoom to fit: {ZoomLevel:P0}";
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Asynchronously gets the local server URL by detecting the local IP address.
+    /// Uses async DNS resolution to avoid blocking the UI thread.
+    /// </summary>
+    private async Task<string> GetLocalServerUrlAsync()
+    {
+        try
+        {
+            var hostName = System.Net.Dns.GetHostName();
+            var addresses = await System.Net.Dns.GetHostAddressesAsync(hostName);
+            var localIp = addresses.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+            
+            if (localIp != null)
+            {
+                return $"ws://{localIp}:8443";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to auto-detect local IP address");
+        }
+        
+        return "ws://localhost:8443";
+    }
+
+    #endregion
 
     #endregion
 }
