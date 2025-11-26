@@ -791,23 +791,32 @@
             <TabItem Header="🖼️ Scene Editor">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="250"/>
-                        <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="280"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="300"/>
                     </Grid.ColumnDefinitions>
                     
-                    <!-- Left Panel - Scene List -->
+                    <!-- Left Panel - Scene List & Templates -->
                     <Border Grid.Column="0" Style="{StaticResource CardStyle}">
-                        <StackPanel>
-                            <TextBlock Text="Scenes" Style="{StaticResource HeaderStyle}"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
                             
-                            <Button Content="➕ Create Scene"
-                                    Command="{Binding CreateCompositionCommand}"
-                                    Style="{StaticResource PrimaryButtonStyle}"/>
+                            <StackPanel Grid.Row="0">
+                                <TextBlock Text="Scenes" Style="{StaticResource HeaderStyle}"/>
+                                
+                                <Button Content="➕ Create Scene"
+                                        Command="{Binding CreateCompositionCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                            </StackPanel>
                             
-                            <ListBox ItemsSource="{Binding Compositions}"
+                            <ListBox Grid.Row="1" 
+                                     ItemsSource="{Binding Compositions}"
                                      SelectedItem="{Binding SelectedComposition}"
-                                     Height="350"
                                      BorderBrush="#E0E0E0"
                                      BorderThickness="1"
                                      Margin="0,10,0,0">
@@ -829,12 +838,45 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
                             
-                            <Button Content="🗑️ Delete Scene"
-                                    Command="{Binding DeleteCompositionCommand}"
-                                    CommandParameter="{Binding SelectedComposition}"
-                                    Style="{StaticResource DangerButtonStyle}"
-                                    Margin="0,10,0,0"/>
-                        </StackPanel>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="📋" Command="{Binding DuplicateCompositionCommand}" 
+                                        Style="{StaticResource PrimaryButtonStyle}" Padding="8,5" ToolTip="Duplicate Scene"/>
+                                <Button Content="🗑️" Command="{Binding DeleteCompositionCommand}" CommandParameter="{Binding SelectedComposition}"
+                                        Style="{StaticResource DangerButtonStyle}" Padding="8,5" ToolTip="Delete Scene"/>
+                            </StackPanel>
+                            
+                            <!-- Templates Section -->
+                            <Expander Grid.Row="3" Header="📁 Templates" Margin="0,10,0,0">
+                                <StackPanel>
+                                    <ListBox ItemsSource="{Binding SceneTemplates}"
+                                             Height="120"
+                                             BorderBrush="#E0E0E0"
+                                             BorderThickness="1"
+                                             Margin="0,5,0,0">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding ThumbnailIcon}" FontSize="16" Margin="0,0,8,0"/>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="11"/>
+                                                        <TextBlock Text="{Binding Category}" FontSize="9" Foreground="#888888"/>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2" Content="Use" 
+                                                            Command="{Binding DataContext.CreateFromTemplateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource PrimaryButtonStyle}" Padding="6,2" FontSize="10"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </StackPanel>
+                            </Expander>
+                        </Grid>
                     </Border>
                     
                     <!-- Center Panel - Canvas/Preview -->
@@ -842,31 +884,50 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             
+                            <!-- Scene Name & Description -->
+                            <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Scene:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBox Grid.Column="1" 
+                                         Text="{Binding SelectedComposition.Name, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="16" FontWeight="SemiBold" Padding="5"
+                                         Visibility="{Binding SelectedComposition, Converter={StaticResource NotNullToVisibilityConverter}}"/>
+                                <Button Grid.Column="2" Content="👁 Preview"
+                                        Command="{Binding TogglePreviewModeCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}" Padding="10,5" Margin="10,0,0,0"/>
+                            </Grid>
+                            
                             <!-- Scene Settings Bar -->
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                                <TextBlock Text="Resolution:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                <ComboBox ItemsSource="{Binding ResolutionPresetOptions}"
-                                          SelectedItem="{Binding SelectedResolutionPreset}"
-                                          Width="180"
-                                          Padding="5"
-                                          Margin="0,0,10,0"/>
-                                <Button Content="Apply"
-                                        Command="{Binding SetCompositionResolutionCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Padding="10,5"/>
+                            <StackPanel Grid.Row="1" Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Resolution:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <ComboBox ItemsSource="{Binding ResolutionPresetOptions}"
+                                              SelectedItem="{Binding SelectedResolutionPreset}"
+                                              Width="160" Padding="5" Margin="0,0,5,0"/>
+                                    <Button Content="Apply" Command="{Binding SetCompositionResolutionCommand}"
+                                            Style="{StaticResource PrimaryButtonStyle}" Padding="8,5"/>
+                                    
+                                    <TextBlock Text="or Custom:" VerticalAlignment="Center" Margin="15,0,5,0"/>
+                                    <TextBox Text="{Binding CustomResolutionWidth}" Width="60" Padding="3"/>
+                                    <TextBlock Text="x" VerticalAlignment="Center" Margin="3,0"/>
+                                    <TextBox Text="{Binding CustomResolutionHeight}" Width="60" Padding="3"/>
+                                    <Button Content="Set" Command="{Binding ApplyCustomResolutionCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Padding="8,5" Margin="5,0,0,0"/>
+                                </StackPanel>
                             </StackPanel>
                             
                             <!-- Canvas Preview Area -->
-                            <Border Grid.Row="1" 
-                                    BorderBrush="#CCCCCC" 
-                                    BorderThickness="1" 
-                                    Background="#333333">
+                            <Border Grid.Row="2" BorderBrush="#CCCCCC" BorderThickness="1" Background="#333333">
                                 <Grid>
-                                    <!-- Checkerboard pattern for transparency -->
                                     <Border Background="#444444" Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Canvas x:Name="SceneCanvas"
                                                 Width="{Binding SelectedComposition.Resolution.Width, FallbackValue=640}"
@@ -877,11 +938,7 @@
                                                 <ScaleTransform ScaleX="0.35" ScaleY="0.35"/>
                                             </Canvas.LayoutTransform>
                                             
-                                            <!-- Background Image (if set) -->
-                                            <Image x:Name="BackgroundImage"
-                                                   Canvas.Left="0"
-                                                   Canvas.Top="0"
-                                                   Stretch="Fill">
+                                            <Image x:Name="BackgroundImage" Canvas.Left="0" Canvas.Top="0" Stretch="Fill">
                                                 <Image.Width>
                                                     <Binding Path="SelectedComposition.Resolution.Width" FallbackValue="640"/>
                                                 </Image.Width>
@@ -890,7 +947,6 @@
                                                 </Image.Height>
                                             </Image>
                                             
-                                            <!-- Overlay Items -->
                                             <ItemsControl ItemsSource="{Binding SelectedComposition.Overlays}">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
@@ -900,18 +956,12 @@
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <Border Background="#80FFFFFF"
-                                                                BorderBrush="#2196F3"
-                                                                BorderThickness="2"
-                                                                Canvas.Left="{Binding X}"
-                                                                Canvas.Top="{Binding Y}"
-                                                                Width="{Binding Width}"
-                                                                Height="{Binding Height}"
+                                                                BorderBrush="#2196F3" BorderThickness="2"
+                                                                Canvas.Left="{Binding X}" Canvas.Top="{Binding Y}"
+                                                                Width="{Binding Width}" Height="{Binding Height}"
                                                                 Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                            <TextBlock Text="{Binding Name}" 
-                                                                       VerticalAlignment="Center"
-                                                                       HorizontalAlignment="Center"
-                                                                       FontSize="12"
-                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                       FontSize="12" TextTrimming="CharacterEllipsis"/>
                                                         </Border>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
@@ -919,78 +969,96 @@
                                         </Canvas>
                                     </Border>
                                     
-                                    <!-- No Scene Selected Message -->
                                     <TextBlock Text="Select or create a scene to begin editing"
-                                               Foreground="#AAAAAA"
-                                               FontSize="16"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
+                                               Foreground="#AAAAAA" FontSize="16"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Visibility="{Binding SelectedComposition, Converter={StaticResource NullToVisibilityConverter}}"/>
                                 </Grid>
                             </Border>
                             
                             <!-- Background Controls -->
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
-                                <Button Content="📷 Set Background Image"
-                                        Command="{Binding SetCompositionBackgroundCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Padding="10,5"/>
-                                <Button Content="🔄 Clear Background"
-                                        Command="{Binding ClearCompositionBackgroundCommand}"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Padding="10,5"/>
-                                
-                                <TextBlock Text="Background Color:" VerticalAlignment="Center" Margin="20,0,5,0"/>
-                                <TextBox Text="{Binding SelectedComposition.Background.Color, UpdateSourceTrigger=PropertyChanged}"
-                                         Width="80"
-                                         Padding="5"
-                                         Visibility="{Binding SelectedComposition, Converter={StaticResource NotNullToVisibilityConverter}}"/>
+                            <StackPanel Grid.Row="3" Margin="0,10,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="📷 Set Background" Command="{Binding SetCompositionBackgroundCommand}"
+                                            Style="{StaticResource PrimaryButtonStyle}" Padding="10,5"/>
+                                    <Button Content="🔄 Clear" Command="{Binding ClearCompositionBackgroundCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Padding="10,5"/>
+                                    
+                                    <TextBlock Text="Color:" VerticalAlignment="Center" Margin="15,0,5,0"/>
+                                    <TextBox Text="{Binding SelectedComposition.Background.Color, UpdateSourceTrigger=PropertyChanged}"
+                                             Width="70" Padding="3"
+                                             Visibility="{Binding SelectedComposition, Converter={StaticResource NotNullToVisibilityConverter}}"/>
+                                    
+                                    <TextBlock Text="Scale:" VerticalAlignment="Center" Margin="15,0,5,0"/>
+                                    <ComboBox ItemsSource="{Binding ScaleModeOptions}" SelectedItem="{Binding SelectedScaleMode}"
+                                              Width="80" Padding="3"/>
+                                    <Button Content="Apply" Command="{Binding ApplyBackgroundScaleModeCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Padding="8,5" Margin="5,0,0,0"/>
+                                </StackPanel>
                             </StackPanel>
                         </Grid>
                     </Border>
                     
-                    <!-- Right Panel - Overlays & Properties -->
+                    <!-- Right Panel - Overlays, Widgets & Properties -->
                     <Border Grid.Column="2" Style="{StaticResource CardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             
+                            <!-- Quick Add Widgets -->
+                            <Expander Grid.Row="0" Header="⚡ Quick Add Widgets" IsExpanded="True">
+                                <StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Widgets}" Margin="0,5,0,0">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.AddWidgetCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource PrimaryButtonStyle}" Padding="6,4" Margin="2"
+                                                        ToolTip="{Binding Description}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Icon}" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="{Binding Name}" FontSize="10"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Expander>
+                            
                             <!-- Available Overlays -->
-                            <StackPanel Grid.Row="0">
+                            <StackPanel Grid.Row="1" Margin="0,10,0,0">
                                 <TextBlock Text="Available Overlays" Style="{StaticResource SubHeaderStyle}"/>
-                                <ListBox ItemsSource="{Binding Overlays}"
-                                         SelectedItem="{Binding SelectedOverlay}"
-                                         Height="120"
-                                         BorderBrush="#E0E0E0"
-                                         BorderThickness="1">
+                                <ListBox ItemsSource="{Binding Overlays}" SelectedItem="{Binding SelectedOverlay}"
+                                         Height="80" BorderBrush="#E0E0E0" BorderThickness="1">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Margin="3" Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Width="100" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Width="80" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text="{Binding Type}" FontSize="10" Foreground="#666666"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
-                                <Button Content="➕ Add to Scene"
-                                        Command="{Binding AddOverlayToCompositionCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Padding="10,5"
-                                        Margin="0,5,0,0"/>
+                                <Button Content="➕ Add to Scene" Command="{Binding AddOverlayToCompositionCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}" Padding="10,5" Margin="0,5,0,0"/>
                             </StackPanel>
                             
                             <!-- Scene Overlays -->
-                            <StackPanel Grid.Row="1" Margin="0,15,0,0">
+                            <StackPanel Grid.Row="2" Margin="0,10,0,0">
                                 <TextBlock Text="Scene Overlays" Style="{StaticResource SubHeaderStyle}"/>
-                                <ListBox ItemsSource="{Binding SelectedComposition.Overlays}"
-                                         SelectedItem="{Binding SelectedCompositionOverlay}"
-                                         Height="120"
-                                         BorderBrush="#E0E0E0"
-                                         BorderThickness="1">
+                                <ListBox ItemsSource="{Binding SelectedComposition.Overlays}" SelectedItem="{Binding SelectedCompositionOverlay}"
+                                         Height="100" BorderBrush="#E0E0E0" BorderThickness="1">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <Grid Margin="3">
@@ -1000,13 +1068,10 @@
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel Grid.Column="0">
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock FontSize="10" Foreground="#666666">
-                                                        <Run Text="Z:"/>
-                                                        <Run Text="{Binding ZIndex, Mode=OneWay}"/>
-                                                        <Run Text=" | "/>
-                                                        <Run Text="{Binding X, StringFormat='X:{0:0}', Mode=OneWay}"/>
-                                                        <Run Text=" "/>
-                                                        <Run Text="{Binding Y, StringFormat='Y:{0:0}', Mode=OneWay}"/>
+                                                    <TextBlock FontSize="9" Foreground="#666666">
+                                                        <Run Text="Z:"/><Run Text="{Binding ZIndex, Mode=OneWay}"/>
+                                                        <Run Text=" X:"/><Run Text="{Binding X, Mode=OneWay}"/>
+                                                        <Run Text=" Y:"/><Run Text="{Binding Y, Mode=OneWay}"/>
                                                     </TextBlock>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -1018,25 +1083,29 @@
                                     </ListBox.ItemTemplate>
                                 </ListBox>
                                 
-                                <!-- Overlay Actions -->
+                                <!-- Layer & Visibility Actions -->
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <Button Content="⬆️" Command="{Binding MoveOverlayUpCommand}" 
-                                            Style="{StaticResource PrimaryButtonStyle}" Padding="8,3" ToolTip="Move Up (Z-Index)"/>
-                                    <Button Content="⬇️" Command="{Binding MoveOverlayDownCommand}" 
-                                            Style="{StaticResource PrimaryButtonStyle}" Padding="8,3" ToolTip="Move Down (Z-Index)"/>
-                                    <Button Content="👁" Command="{Binding ToggleOverlayVisibilityCommand}" 
-                                            Style="{StaticResource SecondaryButtonStyle}" Padding="8,3" ToolTip="Toggle Visibility"/>
-                                    <Button Content="🔒" Command="{Binding ToggleOverlayLockCommand}" 
-                                            Style="{StaticResource SecondaryButtonStyle}" Padding="8,3" ToolTip="Toggle Lock"/>
-                                    <Button Content="🗑️" Command="{Binding RemoveOverlayFromCompositionCommand}" 
-                                            Style="{StaticResource DangerButtonStyle}" Padding="8,3" ToolTip="Remove"/>
+                                    <Button Content="⬆️" Command="{Binding MoveOverlayUpCommand}" Style="{StaticResource PrimaryButtonStyle}" Padding="6,3" ToolTip="Move Up"/>
+                                    <Button Content="⬇️" Command="{Binding MoveOverlayDownCommand}" Style="{StaticResource PrimaryButtonStyle}" Padding="6,3" ToolTip="Move Down"/>
+                                    <Button Content="👁" Command="{Binding ToggleOverlayVisibilityCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" ToolTip="Toggle Visibility"/>
+                                    <Button Content="🔒" Command="{Binding ToggleOverlayLockCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" ToolTip="Toggle Lock"/>
+                                    <Button Content="🗑️" Command="{Binding RemoveOverlayFromCompositionCommand}" Style="{StaticResource DangerButtonStyle}" Padding="6,3" ToolTip="Remove"/>
+                                </StackPanel>
+                                
+                                <!-- Alignment Actions -->
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <Button Content="◀" Command="{Binding AlignOverlayLeftCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" ToolTip="Align Left"/>
+                                    <Button Content="⬛" Command="{Binding CenterOverlayCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" ToolTip="Center"/>
+                                    <Button Content="▶" Command="{Binding AlignOverlayRightCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" ToolTip="Align Right"/>
+                                    <Button Content="▲" Command="{Binding AlignOverlayTopCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" ToolTip="Align Top"/>
+                                    <Button Content="▼" Command="{Binding AlignOverlayBottomCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" ToolTip="Align Bottom"/>
                                 </StackPanel>
                             </StackPanel>
                             
                             <!-- Overlay Position Properties -->
-                            <Border Grid.Row="2" BorderBrush="#E0E0E0" BorderThickness="1" Padding="10" CornerRadius="4" Margin="0,10,0,0">
+                            <Border Grid.Row="3" BorderBrush="#E0E0E0" BorderThickness="1" Padding="8" CornerRadius="4" Margin="0,10,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="Selected Overlay Position" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Overlay Position" FontWeight="SemiBold" Margin="0,0,0,5"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
@@ -1049,41 +1118,29 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="X:" VerticalAlignment="Center" Margin="0,0,5,5"/>
-                                        <TextBox Grid.Row="0" Grid.Column="1" 
-                                                 Text="{Binding SelectedCompositionOverlay.X, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Padding="3" Margin="0,0,10,5"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="X:" VerticalAlignment="Center" Margin="0,0,3,3"/>
+                                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SelectedCompositionOverlay.X, UpdateSourceTrigger=PropertyChanged}" Padding="3" Margin="0,0,8,3"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Y:" VerticalAlignment="Center" Margin="0,0,3,3"/>
+                                        <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding SelectedCompositionOverlay.Y, UpdateSourceTrigger=PropertyChanged}" Padding="3" Margin="0,0,0,3"/>
                                         
-                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Y:" VerticalAlignment="Center" Margin="0,0,5,5"/>
-                                        <TextBox Grid.Row="0" Grid.Column="3" 
-                                                 Text="{Binding SelectedCompositionOverlay.Y, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Padding="3" Margin="0,0,0,5"/>
-                                        
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="W:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                        <TextBox Grid.Row="1" Grid.Column="1" 
-                                                 Text="{Binding SelectedCompositionOverlay.Width, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Padding="3" Margin="0,0,10,0"/>
-                                        
-                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="H:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                        <TextBox Grid.Row="1" Grid.Column="3" 
-                                                 Text="{Binding SelectedCompositionOverlay.Height, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Padding="3"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="W:" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedCompositionOverlay.Width, UpdateSourceTrigger=PropertyChanged}" Padding="3" Margin="0,0,8,0"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="H:" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                        <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SelectedCompositionOverlay.Height, UpdateSourceTrigger=PropertyChanged}" Padding="3"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
                             
                             <!-- Publish Actions -->
-                            <StackPanel Grid.Row="3" Margin="0,15,0,0">
-                                <Button Content="📤 PUBLISH TO ALL"
-                                        Command="{Binding PublishCompositionCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        FontWeight="Bold"/>
-                                <Button Content="📤 Publish to Group"
-                                        Command="{Binding PublishCompositionToGroupCommand}"
-                                        Style="{StaticResource SecondaryButtonStyle}"/>
-                                <Button Content="💾 Save Scene"
-                                        Command="{Binding SaveCompositionCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"/>
+                            <StackPanel Grid.Row="4" Margin="0,10,0,0">
+                                <Button Content="📤 PUBLISH TO ALL DISPLAYS" Command="{Binding PublishCompositionCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}" FontWeight="Bold"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                    <Button Content="📤 To Group" Command="{Binding PublishCompositionToGroupCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" Padding="10,5"/>
+                                    <Button Content="💾 Save" Command="{Binding SaveCompositionCommand}"
+                                            Style="{StaticResource PrimaryButtonStyle}" Padding="10,5"/>
+                                </StackPanel>
                             </StackPanel>
                         </Grid>
                     </Border>
