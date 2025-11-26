@@ -16,6 +16,21 @@ public class Overlay
     public OverlayStyle Style { get; set; } = new();
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// SQL connection settings for SqlData type overlays
+    /// </summary>
+    public SqlConnectionSettings? SqlConnectionSettings { get; set; }
+
+    /// <summary>
+    /// Weather settings for Weather type overlays
+    /// </summary>
+    public WeatherSettings? WeatherSettings { get; set; }
+
+    /// <summary>
+    /// Ticker settings for Ticker type overlays
+    /// </summary>
+    public TickerSettings? TickerSettings { get; set; }
 }
 
 public enum OverlayType
@@ -67,4 +82,129 @@ public class OverlayStyle
     public int BorderRadius { get; set; } = 5;
     public int Padding { get; set; } = 10;
     public bool Shadow { get; set; } = true;
+}
+
+/// <summary>
+/// SQL Server connection settings for SqlData type overlays
+/// </summary>
+public class SqlConnectionSettings
+{
+    /// <summary>
+    /// SQL Server hostname or IP address
+    /// </summary>
+    public string Server { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Database name to connect to
+    /// </summary>
+    public string Database { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Username for SQL authentication
+    /// </summary>
+    public string Username { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Password for SQL authentication
+    /// </summary>
+    public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// SQL Server port (default: 1433)
+    /// </summary>
+    public int Port { get; set; } = 1433;
+
+    /// <summary>
+    /// Whether to use Windows Integrated Authentication
+    /// </summary>
+    public bool UseTrustedConnection { get; set; } = false;
+
+    /// <summary>
+    /// Connection timeout in seconds
+    /// </summary>
+    public int ConnectionTimeout { get; set; } = 30;
+
+    /// <summary>
+    /// Generates a connection string from the settings
+    /// </summary>
+    public string ToConnectionString()
+    {
+        if (UseTrustedConnection)
+        {
+            return $"Server={Server},{Port};Database={Database};Trusted_Connection=True;Connection Timeout={ConnectionTimeout}";
+        }
+        return $"Server={Server},{Port};Database={Database};User Id={Username};Password={Password};Connection Timeout={ConnectionTimeout}";
+    }
+}
+
+/// <summary>
+/// Weather API settings for Weather type overlays
+/// </summary>
+public class WeatherSettings
+{
+    /// <summary>
+    /// API key for weather service (e.g., OpenWeatherMap)
+    /// </summary>
+    public string ApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Location for weather data (city name or coordinates)
+    /// </summary>
+    public string Location { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Temperature units: "metric" (Celsius), "imperial" (Fahrenheit), or "kelvin"
+    /// </summary>
+    public string Units { get; set; } = "metric";
+
+    /// <summary>
+    /// Language code for weather descriptions (e.g., "en", "de", "fr")
+    /// </summary>
+    public string Language { get; set; } = "en";
+
+    /// <summary>
+    /// Whether to show extended forecast
+    /// </summary>
+    public bool ShowForecast { get; set; } = false;
+
+    /// <summary>
+    /// Number of forecast days to show (1-7)
+    /// </summary>
+    public int ForecastDays { get; set; } = 3;
+}
+
+/// <summary>
+/// Ticker settings for Ticker type overlays (scrolling text)
+/// </summary>
+public class TickerSettings
+{
+    /// <summary>
+    /// Scroll speed in pixels per second
+    /// </summary>
+    public int Speed { get; set; } = 50;
+
+    /// <summary>
+    /// Scroll direction: "left", "right", "up", "down"
+    /// </summary>
+    public string Direction { get; set; } = "left";
+
+    /// <summary>
+    /// URL to fetch ticker content from (RSS feed or API endpoint)
+    /// </summary>
+    public string SourceUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether to loop the ticker content
+    /// </summary>
+    public bool Loop { get; set; } = true;
+
+    /// <summary>
+    /// Separator between ticker items
+    /// </summary>
+    public string ItemSeparator { get; set; } = "  •  ";
+
+    /// <summary>
+    /// Pause duration in milliseconds when ticker reaches the end (before looping)
+    /// </summary>
+    public int PauseDuration { get; set; } = 0;
 }

@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:MakerScreen.Management.ViewModels"
+        xmlns:converters="clr-namespace:MakerScreen.Management.Converters"
         Title="MakerScreen Management Console" Height="800" Width="1400"
         WindowStartupLocation="CenterScreen">
     
@@ -163,6 +164,14 @@
                         <Border Style="{StaticResource CardStyle}">
                             <StackPanel>
                                 <TextBlock Text="Client Deployment" Style="{StaticResource HeaderStyle}"/>
+                                
+                                <!-- Server URL Configuration -->
+                                <StackPanel Margin="0,0,0,10">
+                                    <TextBlock Text="Server URL for Raspberry Pi" FontSize="12" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding RaspberryPiServerUrl, UpdateSourceTrigger=PropertyChanged}"
+                                             Padding="5" 
+                                             ToolTip="WebSocket server URL that Raspberry Pi clients will connect to (e.g., ws://192.168.1.100:8443)"/>
+                                </StackPanel>
                                 
                                 <Button Content="🚀 Auto-Deploy Clients"
                                         Command="{Binding AutoDeployClientsCommand}"
@@ -446,87 +455,261 @@
                     
                     <!-- Overlay Editor -->
                     <Border Grid.Column="1" Style="{StaticResource CardStyle}">
-                        <StackPanel>
-                            <TextBlock Text="Overlay Editor" Style="{StaticResource HeaderStyle}"/>
-                            
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="Overlay Editor" Style="{StaticResource HeaderStyle}"/>
                                 
-                                <!-- Overlay Properties -->
-                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                    <TextBlock Text="Properties" Style="{StaticResource SubHeaderStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
                                     
-                                    <TextBlock Text="Name" FontSize="12" Margin="0,5,0,2"/>
-                                    <TextBox Text="{Binding SelectedOverlay.Name, UpdateSourceTrigger=PropertyChanged}"
-                                             Padding="5" Margin="0,0,0,10"/>
+                                    <!-- Overlay Properties -->
+                                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                        <TextBlock Text="Properties" Style="{StaticResource SubHeaderStyle}"/>
+                                        
+                                        <TextBlock Text="Name" FontSize="12" Margin="0,5,0,2"/>
+                                        <TextBox Text="{Binding SelectedOverlay.Name, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="5" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Type" FontSize="12" Margin="0,5,0,2"/>
+                                        <ComboBox SelectedItem="{Binding SelectedOverlay.Type}"
+                                                  Padding="5" Margin="0,0,0,10">
+                                            <ComboBoxItem Content="Text"/>
+                                            <ComboBoxItem Content="DateTime"/>
+                                            <ComboBoxItem Content="Weather"/>
+                                            <ComboBoxItem Content="Ticker"/>
+                                            <ComboBoxItem Content="SqlData"/>
+                                            <ComboBoxItem Content="Html"/>
+                                            <ComboBoxItem Content="QrCode"/>
+                                            <ComboBoxItem Content="Logo"/>
+                                        </ComboBox>
+                                        
+                                        <TextBlock Text="Content" FontSize="12" Margin="0,5,0,2"/>
+                                        <TextBox Text="{Binding SelectedOverlay.Content, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="80"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="Wrap"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 Padding="5" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Refresh Interval (seconds)" FontSize="12" Margin="0,5,0,2"/>
+                                        <TextBox Text="{Binding SelectedOverlay.RefreshInterval, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="5" Margin="0,0,0,10"/>
+                                    </StackPanel>
                                     
-                                    <TextBlock Text="Type" FontSize="12" Margin="0,5,0,2"/>
-                                    <ComboBox SelectedItem="{Binding SelectedOverlay.Type}"
-                                              Padding="5" Margin="0,0,0,10">
-                                        <ComboBoxItem Content="Text"/>
-                                        <ComboBoxItem Content="DateTime"/>
-                                        <ComboBoxItem Content="Weather"/>
-                                        <ComboBoxItem Content="Ticker"/>
-                                        <ComboBoxItem Content="SqlData"/>
-                                        <ComboBoxItem Content="Html"/>
-                                        <ComboBoxItem Content="QrCode"/>
-                                        <ComboBoxItem Content="Logo"/>
-                                    </ComboBox>
+                                    <!-- Overlay Style -->
+                                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                        <TextBlock Text="Style" Style="{StaticResource SubHeaderStyle}"/>
+                                        
+                                        <TextBlock Text="Font Family" FontSize="12" Margin="0,5,0,2"/>
+                                        <TextBox Text="{Binding SelectedOverlay.Style.FontFamily, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="5" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Font Size" FontSize="12" Margin="0,5,0,2"/>
+                                        <TextBox Text="{Binding SelectedOverlay.Style.FontSize, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="5" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Font Color" FontSize="12" Margin="0,5,0,2"/>
+                                        <TextBox Text="{Binding SelectedOverlay.Style.FontColor, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="5" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Text="Background Color" FontSize="12" Margin="0,5,0,2"/>
+                                        <TextBox Text="{Binding SelectedOverlay.Style.BackgroundColor, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="5" Margin="0,0,0,10"/>
+                                    </StackPanel>
+                                </Grid>
+                                
+                                <!-- SQL Data Settings (only visible when Type is SqlData) -->
+                                <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="10" CornerRadius="4" Margin="0,10,0,0"
+                                        Visibility="{Binding SelectedOverlay.Type, Converter={StaticResource OverlayTypeToVisibilityConverter}, ConverterParameter=SqlData}">
+                                    <StackPanel>
+                                        <TextBlock Text="🗄️ SQL Data Settings" Style="{StaticResource SubHeaderStyle}" Foreground="#1976D2"/>
+                                        
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
+                                                <TextBlock Text="Server" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.SqlConnectionSettings.Server, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="SQL Server hostname or IP address"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
+                                                <TextBlock Text="Port" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.SqlConnectionSettings.Port, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="SQL Server port (default: 1433)"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,0">
+                                                <TextBlock Text="Database" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.SqlConnectionSettings.Database, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="Database name"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,5,10,0">
+                                                <TextBlock Text="Username" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.SqlConnectionSettings.Username, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="SQL authentication username"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="2" Grid.Column="1" Margin="10,5,0,0">
+                                                <TextBlock Text="Password" FontSize="12" Margin="0,5,0,2"/>
+                                                <PasswordBox converters:PasswordBoxHelper.BindPassword="True"
+                                                             converters:PasswordBoxHelper.BoundPassword="{Binding SelectedOverlay.SqlConnectionSettings.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             Padding="5" ToolTip="SQL authentication password"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0">
+                                                <CheckBox Content="Use Windows Authentication (Trusted Connection)" 
+                                                          IsChecked="{Binding SelectedOverlay.SqlConnectionSettings.UseTrustedConnection}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        
+                                        <TextBlock Text="SQL Query" FontSize="12" Margin="0,10,0,2"/>
+                                        <TextBox Text="{Binding SelectedOverlay.SqlQuery, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="60" AcceptsReturn="True" TextWrapping="Wrap" 
+                                                 VerticalScrollBarVisibility="Auto" Padding="5" FontFamily="Consolas"
+                                                 ToolTip="SQL query to execute for data retrieval"/>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- Weather Settings (only visible when Type is Weather) -->
+                                <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="10" CornerRadius="4" Margin="0,10,0,0"
+                                        Visibility="{Binding SelectedOverlay.Type, Converter={StaticResource OverlayTypeToVisibilityConverter}, ConverterParameter=Weather}">
+                                    <StackPanel>
+                                        <TextBlock Text="🌤️ Weather Settings" Style="{StaticResource SubHeaderStyle}" Foreground="#FF9800"/>
+                                        
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,0">
+                                                <TextBlock Text="API Key" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.WeatherSettings.ApiKey, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="OpenWeatherMap API key"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,5,10,0">
+                                                <TextBlock Text="Location" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.WeatherSettings.Location, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="City name or coordinates (e.g., 'Berlin' or '52.52,13.40')"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,5,0,0">
+                                                <TextBlock Text="Units" FontSize="12" Margin="0,5,0,2"/>
+                                                <ComboBox SelectedItem="{Binding SelectedOverlay.WeatherSettings.Units}"
+                                                          Padding="5" ToolTip="Temperature units">
+                                                    <ComboBoxItem Content="metric"/>
+                                                    <ComboBoxItem Content="imperial"/>
+                                                    <ComboBoxItem Content="kelvin"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,5,10,0">
+                                                <TextBlock Text="Language" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.WeatherSettings.Language, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="Language code (e.g., 'en', 'de', 'fr')"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="2" Grid.Column="1" Margin="10,10,0,0">
+                                                <CheckBox Content="Show Forecast" 
+                                                          IsChecked="{Binding SelectedOverlay.WeatherSettings.ShowForecast}"
+                                                          ToolTip="Show extended weather forecast"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- Ticker Settings (only visible when Type is Ticker) -->
+                                <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="10" CornerRadius="4" Margin="0,10,0,0"
+                                        Visibility="{Binding SelectedOverlay.Type, Converter={StaticResource OverlayTypeToVisibilityConverter}, ConverterParameter=Ticker}">
+                                    <StackPanel>
+                                        <TextBlock Text="📜 Ticker Settings" Style="{StaticResource SubHeaderStyle}" Foreground="#4CAF50"/>
+                                        
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
+                                                <TextBlock Text="Speed (px/sec)" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.TickerSettings.Speed, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="Scroll speed in pixels per second"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
+                                                <TextBlock Text="Direction" FontSize="12" Margin="0,5,0,2"/>
+                                                <ComboBox SelectedItem="{Binding SelectedOverlay.TickerSettings.Direction}"
+                                                          Padding="5" ToolTip="Scroll direction">
+                                                    <ComboBoxItem Content="left"/>
+                                                    <ComboBoxItem Content="right"/>
+                                                    <ComboBoxItem Content="up"/>
+                                                    <ComboBoxItem Content="down"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,0">
+                                                <TextBlock Text="Source URL (RSS/API)" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.TickerSettings.SourceUrl, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="URL to fetch ticker content (RSS feed or API endpoint)"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,5,10,0">
+                                                <TextBlock Text="Item Separator" FontSize="12" Margin="0,5,0,2"/>
+                                                <TextBox Text="{Binding SelectedOverlay.TickerSettings.ItemSeparator, UpdateSourceTrigger=PropertyChanged}"
+                                                         Padding="5" ToolTip="Text to display between ticker items"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel Grid.Row="2" Grid.Column="1" Margin="10,10,0,0">
+                                                <CheckBox Content="Loop" 
+                                                          IsChecked="{Binding SelectedOverlay.TickerSettings.Loop}"
+                                                          ToolTip="Loop ticker content continuously"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- Overlay Actions -->
+                                <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                    <Button Content="💾 Save Overlay"
+                                            Command="{Binding SaveOverlayCommand}"
+                                            Style="{StaticResource PrimaryButtonStyle}"/>
                                     
-                                    <TextBlock Text="Content" FontSize="12" Margin="0,5,0,2"/>
-                                    <TextBox Text="{Binding SelectedOverlay.Content, UpdateSourceTrigger=PropertyChanged}"
-                                             Height="80"
-                                             AcceptsReturn="True"
-                                             TextWrapping="Wrap"
-                                             VerticalScrollBarVisibility="Auto"
-                                             Padding="5" Margin="0,0,0,10"/>
+                                    <Button Content="📤 Assign to Clients"
+                                            Command="{Binding AssignOverlayToClientsCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"/>
                                     
-                                    <TextBlock Text="Refresh Interval (seconds)" FontSize="12" Margin="0,5,0,2"/>
-                                    <TextBox Text="{Binding SelectedOverlay.RefreshInterval, UpdateSourceTrigger=PropertyChanged}"
-                                             Padding="5" Margin="0,0,0,10"/>
+                                    <Button Content="🗑️ Delete Overlay"
+                                            Command="{Binding DeleteOverlayCommand}"
+                                            CommandParameter="{Binding SelectedOverlay}"
+                                            Style="{StaticResource DangerButtonStyle}"/>
                                 </StackPanel>
-                                
-                                <!-- Overlay Style -->
-                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                    <TextBlock Text="Style" Style="{StaticResource SubHeaderStyle}"/>
-                                    
-                                    <TextBlock Text="Font Family" FontSize="12" Margin="0,5,0,2"/>
-                                    <TextBox Text="{Binding SelectedOverlay.Style.FontFamily, UpdateSourceTrigger=PropertyChanged}"
-                                             Padding="5" Margin="0,0,0,10"/>
-                                    
-                                    <TextBlock Text="Font Size" FontSize="12" Margin="0,5,0,2"/>
-                                    <TextBox Text="{Binding SelectedOverlay.Style.FontSize, UpdateSourceTrigger=PropertyChanged}"
-                                             Padding="5" Margin="0,0,0,10"/>
-                                    
-                                    <TextBlock Text="Font Color" FontSize="12" Margin="0,5,0,2"/>
-                                    <TextBox Text="{Binding SelectedOverlay.Style.FontColor, UpdateSourceTrigger=PropertyChanged}"
-                                             Padding="5" Margin="0,0,0,10"/>
-                                    
-                                    <TextBlock Text="Background Color" FontSize="12" Margin="0,5,0,2"/>
-                                    <TextBox Text="{Binding SelectedOverlay.Style.BackgroundColor, UpdateSourceTrigger=PropertyChanged}"
-                                             Padding="5" Margin="0,0,0,10"/>
-                                </StackPanel>
-                            </Grid>
-                            
-                            <!-- Overlay Actions -->
-                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                                <Button Content="💾 Save Overlay"
-                                        Command="{Binding SaveOverlayCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"/>
-                                
-                                <Button Content="📤 Assign to Clients"
-                                        Command="{Binding AssignOverlayToClientsCommand}"
-                                        Style="{StaticResource SecondaryButtonStyle}"/>
-                                
-                                <Button Content="🗑️ Delete Overlay"
-                                        Command="{Binding DeleteOverlayCommand}"
-                                        CommandParameter="{Binding SelectedOverlay}"
-                                        Style="{StaticResource DangerButtonStyle}"/>
                             </StackPanel>
-                        </StackPanel>
+                        </ScrollViewer>
                     </Border>
                 </Grid>
             </TabItem>
@@ -935,7 +1118,7 @@
                                                 Background="{Binding SelectedComposition.Background.Color, FallbackValue=#000000}"
                                                 ClipToBounds="True">
                                             <Canvas.LayoutTransform>
-                                                <ScaleTransform ScaleX="0.35" ScaleY="0.35"/>
+                                                <ScaleTransform ScaleX="{Binding ZoomLevel}" ScaleY="{Binding ZoomLevel}"/>
                                             </Canvas.LayoutTransform>
                                             
                                             <Image x:Name="BackgroundImage" Canvas.Left="0" Canvas.Top="0" Stretch="Fill">
@@ -968,6 +1151,21 @@
                                             </ItemsControl>
                                         </Canvas>
                                     </Border>
+                                    
+                                    <!-- Zoom Controls Overlay -->
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Right" 
+                                                Margin="10" Background="#AA333333" ToolTip="Zoom Controls">
+                                        <Button Content="🔍-" Command="{Binding ZoomOutCommand}" 
+                                                Style="{StaticResource PrimaryButtonStyle}" Padding="6,3" Margin="2" FontSize="12" ToolTip="Zoom Out"/>
+                                        <TextBlock Text="{Binding ZoomLevel, StringFormat='{}{0:P0}'}" 
+                                                   Foreground="White" VerticalAlignment="Center" MinWidth="50" TextAlignment="Center" FontWeight="SemiBold"/>
+                                        <Button Content="🔍+" Command="{Binding ZoomInCommand}" 
+                                                Style="{StaticResource PrimaryButtonStyle}" Padding="6,3" Margin="2" FontSize="12" ToolTip="Zoom In"/>
+                                        <Button Content="⟲" Command="{Binding ResetZoomCommand}" 
+                                                Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" Margin="2" FontSize="12" ToolTip="Reset Zoom"/>
+                                        <Button Content="⤢" Command="{Binding ZoomToFitCommand}" 
+                                                Style="{StaticResource SecondaryButtonStyle}" Padding="6,3" Margin="2" FontSize="12" ToolTip="Zoom to Fit"/>
+                                    </StackPanel>
                                     
                                     <TextBlock Text="Select or create a scene to begin editing"
                                                Foreground="#AAAAAA" FontSize="16"
