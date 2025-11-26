@@ -12,6 +12,10 @@ namespace MakerScreen.Management.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
+    private const int ALIGNMENT_MARGIN = 20;
+    private const int MAX_RESOLUTION = 7680; // 8K max resolution
+    private const int MIN_RESOLUTION = 100;
+    
     private readonly ILogger<MainViewModel> _logger;
     private readonly IWebSocketServer _webSocketServer;
     private readonly IClientDeploymentService _deploymentService;
@@ -21,6 +25,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IClientMonitorService? _clientMonitorService;
     private readonly IClientGroupService? _clientGroupService;
     private readonly IEmergencyBroadcastService? _emergencyBroadcastService;
+    private readonly IDisplayCompositionService? _compositionService;
 
     [ObservableProperty]
     private string _statusMessage = "Ready";
@@ -46,12 +51,46 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private EmergencyBroadcast? _selectedEmergencyBroadcast;
 
+    [ObservableProperty]
+    private DisplayComposition? _selectedComposition;
+
+    [ObservableProperty]
+    private CompositionOverlay? _selectedCompositionOverlay;
+
+    [ObservableProperty]
+    private string _selectedResolutionPreset = "Full HD (1920x1080)";
+
+    [ObservableProperty]
+    private int _customResolutionWidth = 1920;
+
+    [ObservableProperty]
+    private int _customResolutionHeight = 1080;
+
+    [ObservableProperty]
+    private string _selectedScaleMode = "Fill";
+
+    [ObservableProperty]
+    private bool _isPreviewMode = false;
+
     public ObservableCollection<SignageClient> Clients { get; } = new();
     public ObservableCollection<ContentItem> ContentItems { get; } = new();
     public ObservableCollection<Playlist> Playlists { get; } = new();
     public ObservableCollection<Overlay> Overlays { get; } = new();
     public ObservableCollection<ClientGroup> ClientGroups { get; } = new();
     public ObservableCollection<EmergencyBroadcast> EmergencyBroadcasts { get; } = new();
+    public ObservableCollection<DisplayComposition> Compositions { get; } = new();
+    public ObservableCollection<SceneTemplate> SceneTemplates { get; } = new();
+    public ObservableCollection<Widget> Widgets { get; } = new();
+    
+    /// <summary>
+    /// Available resolution presets for the scene editor
+    /// </summary>
+    public List<string> ResolutionPresetOptions { get; } = new List<string>(MakerScreen.Core.Models.ResolutionPresets.Presets.Keys);
+
+    /// <summary>
+    /// Available scale modes for background images
+    /// </summary>
+    public List<string> ScaleModeOptions { get; } = new List<string> { "Fill", "Fit", "Stretch", "Center", "Tile" };
 
     public MainViewModel(
         ILogger<MainViewModel> logger,
@@ -62,7 +101,8 @@ public partial class MainViewModel : ObservableObject
         IOverlayService? overlayService = null,
         IClientMonitorService? clientMonitorService = null,
         IClientGroupService? clientGroupService = null,
-        IEmergencyBroadcastService? emergencyBroadcastService = null)
+        IEmergencyBroadcastService? emergencyBroadcastService = null,
+        IDisplayCompositionService? compositionService = null)
     {
         _logger = logger;
         _webSocketServer = webSocketServer;
@@ -73,6 +113,7 @@ public partial class MainViewModel : ObservableObject
         _clientMonitorService = clientMonitorService;
         _clientGroupService = clientGroupService;
         _emergencyBroadcastService = emergencyBroadcastService;
+        _compositionService = compositionService;
 
         // Subscribe to client monitor events if available
         if (_clientMonitorService != null)
@@ -89,7 +130,19 @@ public partial class MainViewModel : ObservableObject
         LoadOverlays();
         LoadClientGroups();
         LoadEmergencyBroadcasts();
+        LoadCompositions();
 #pragma warning restore CS4014
+        LoadSceneTemplates();
+        LoadWidgets();
+    }
+
+    private void LoadWidgets()
+    {
+        Widgets.Clear();
+        foreach (var widget in DefaultSceneTemplates.GetWidgets())
+        {
+            Widgets.Add(widget);
+        }
     }
 
     private void OnClientStatusChanged(object? sender, ClientStatusChangedEventArgs e)
@@ -829,6 +882,654 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading emergency broadcasts");
+        }
+    }
+
+    #endregion
+
+    #region Scene Composition Commands
+
+    private async Task LoadCompositions()
+    {
+        if (_compositionService == null) return;
+
+        try
+        {
+            var compositions = await _compositionService.GetAllCompositionsAsync();
+            
+            Compositions.Clear();
+            foreach (var composition in compositions)
+            {
+                Compositions.Add(composition);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading compositions");
+        }
+    }
+
+    [RelayCommand]
+    private async Task CreateComposition()
+    {
+        if (_compositionService == null) return;
+
+        try
+        {
+            var composition = new DisplayComposition
+            {
+                Name = $"Scene {DateTime.Now:yyyy-MM-dd HH:mm}",
+                Description = "New scene composition"
+            };
+
+            await _compositionService.CreateCompositionAsync(composition);
+            await LoadCompositions();
+            SelectedComposition = composition;
+            StatusMessage = $"Scene '{composition.Name}' created";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating composition");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveComposition()
+    {
+        if (SelectedComposition == null || _compositionService == null) return;
+
+        try
+        {
+            await _compositionService.UpdateCompositionAsync(SelectedComposition);
+            StatusMessage = $"Scene '{SelectedComposition.Name}' saved";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving composition");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteComposition(DisplayComposition? composition)
+    {
+        if (composition == null || _compositionService == null) return;
+
+        try
+        {
+            await _compositionService.DeleteCompositionAsync(composition.Id);
+            await LoadCompositions();
+            SelectedComposition = null;
+            StatusMessage = $"Scene '{composition.Name}' deleted";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting composition");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SetCompositionBackground()
+    {
+        if (SelectedComposition == null) return;
+
+        try
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Filter = "Image files (*.png;*.jpg;*.jpeg;*.gif;*.bmp)|*.png;*.jpg;*.jpeg;*.gif;*.bmp|All files (*.*)|*.*",
+                Title = "Select Background Image"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                var imageData = await File.ReadAllBytesAsync(openFileDialog.FileName);
+                var fileName = Path.GetFileName(openFileDialog.FileName);
+                var extension = Path.GetExtension(openFileDialog.FileName).ToLower();
+                
+                // First update the composition with the new background
+                SelectedComposition.Background.Type = BackgroundType.Image;
+                SelectedComposition.Background.ImageData = imageData;
+                
+                if (_compositionService != null)
+                {
+                    await _compositionService.UpdateCompositionAsync(SelectedComposition);
+                }
+                
+                // Only add as content item after composition update succeeds
+                var contentItem = new ContentItem
+                {
+                    Name = $"bg_{fileName}",
+                    Type = ContentType.Image,
+                    Data = imageData,
+                    MimeType = DetermineMimeType(extension)
+                };
+                await _contentService.AddContentAsync(contentItem);
+                SelectedComposition.Background.ImageContentId = contentItem.Id;
+                
+                // Update composition again with content reference
+                if (_compositionService != null)
+                {
+                    await _compositionService.UpdateCompositionAsync(SelectedComposition);
+                }
+                
+                // Trigger property changed notification
+                OnPropertyChanged(nameof(SelectedComposition));
+                
+                StatusMessage = $"Background image '{fileName}' set";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting background image");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ClearCompositionBackground()
+    {
+        if (SelectedComposition == null || _compositionService == null) return;
+
+        try
+        {
+            SelectedComposition.Background.Type = BackgroundType.Color;
+            SelectedComposition.Background.ImageData = null;
+            SelectedComposition.Background.ImageContentId = null;
+            
+            await _compositionService.UpdateCompositionAsync(SelectedComposition);
+            OnPropertyChanged(nameof(SelectedComposition));
+            StatusMessage = "Background cleared";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing background");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SetCompositionResolution()
+    {
+        if (SelectedComposition == null || _compositionService == null) return;
+
+        try
+        {
+            if (MakerScreen.Core.Models.ResolutionPresets.Presets.TryGetValue(SelectedResolutionPreset, out var resolution))
+            {
+                if (resolution.Width > 0 && resolution.Height > 0)
+                {
+                    SelectedComposition.Resolution.Width = resolution.Width;
+                    SelectedComposition.Resolution.Height = resolution.Height;
+                    SelectedComposition.Resolution.PresetName = SelectedResolutionPreset;
+                    
+                    await _compositionService.UpdateCompositionAsync(SelectedComposition);
+                    OnPropertyChanged(nameof(SelectedComposition));
+                    StatusMessage = $"Resolution set to {resolution.Width}x{resolution.Height}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting resolution");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddOverlayToComposition()
+    {
+        if (SelectedComposition == null || SelectedOverlay == null || _compositionService == null) return;
+
+        try
+        {
+            var compositionOverlay = new CompositionOverlay
+            {
+                OverlayId = SelectedOverlay.Id,
+                Name = SelectedOverlay.Name,
+                X = 50,
+                Y = 50,
+                Width = SelectedOverlay.Position.Width,
+                Height = SelectedOverlay.Position.Height
+            };
+
+            await _compositionService.AddOverlayToCompositionAsync(SelectedComposition.Id, compositionOverlay);
+            OnPropertyChanged(nameof(SelectedComposition));
+            StatusMessage = $"Overlay '{SelectedOverlay.Name}' added to scene";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding overlay to composition");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task RemoveOverlayFromComposition()
+    {
+        if (SelectedComposition == null || SelectedCompositionOverlay == null || _compositionService == null) return;
+
+        try
+        {
+            await _compositionService.RemoveOverlayFromCompositionAsync(SelectedComposition.Id, SelectedCompositionOverlay.Id);
+            SelectedCompositionOverlay = null;
+            OnPropertyChanged(nameof(SelectedComposition));
+            StatusMessage = "Overlay removed from scene";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing overlay from composition");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task UpdateCompositionOverlayPosition(CompositionOverlay? overlay)
+    {
+        if (SelectedComposition == null || overlay == null || _compositionService == null) return;
+
+        try
+        {
+            await _compositionService.UpdateOverlayInCompositionAsync(SelectedComposition.Id, overlay);
+            StatusMessage = "Overlay position updated";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating overlay position");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task PublishComposition()
+    {
+        if (SelectedComposition == null || _compositionService == null) return;
+
+        try
+        {
+            await _compositionService.PublishCompositionAsync(SelectedComposition.Id);
+            StatusMessage = $"Scene '{SelectedComposition.Name}' published to all displays";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing composition");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task PublishCompositionToGroup()
+    {
+        if (SelectedComposition == null || SelectedGroup == null || _compositionService == null) return;
+
+        try
+        {
+            await _compositionService.PublishCompositionToGroupAsync(SelectedComposition.Id, SelectedGroup.Id);
+            StatusMessage = $"Scene '{SelectedComposition.Name}' published to group '{SelectedGroup.Name}'";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing composition to group");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void MoveOverlayUp()
+    {
+        if (SelectedCompositionOverlay == null || SelectedComposition == null) return;
+        if (SelectedComposition.Overlays.Count == 0) return;
+        
+        var maxZIndex = SelectedComposition.Overlays.Max(o => o.ZIndex);
+        if (SelectedCompositionOverlay.ZIndex < maxZIndex)
+        {
+            SelectedCompositionOverlay.ZIndex++;
+            OnPropertyChanged(nameof(SelectedComposition));
+        }
+    }
+
+    [RelayCommand]
+    private void MoveOverlayDown()
+    {
+        if (SelectedCompositionOverlay == null) return;
+        
+        if (SelectedCompositionOverlay.ZIndex > 0)
+        {
+            SelectedCompositionOverlay.ZIndex--;
+            OnPropertyChanged(nameof(SelectedComposition));
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleOverlayVisibility()
+    {
+        if (SelectedCompositionOverlay == null) return;
+        
+        SelectedCompositionOverlay.IsVisible = !SelectedCompositionOverlay.IsVisible;
+        OnPropertyChanged(nameof(SelectedComposition));
+    }
+
+    [RelayCommand]
+    private void ToggleOverlayLock()
+    {
+        if (SelectedCompositionOverlay == null) return;
+        
+        SelectedCompositionOverlay.IsLocked = !SelectedCompositionOverlay.IsLocked;
+        OnPropertyChanged(nameof(SelectedComposition));
+    }
+
+    [RelayCommand]
+    private async Task DuplicateComposition()
+    {
+        if (SelectedComposition == null || _compositionService == null) return;
+
+        try
+        {
+            var duplicate = new DisplayComposition
+            {
+                Name = $"{SelectedComposition.Name} (Copy)",
+                Description = SelectedComposition.Description,
+                Resolution = new CompositionResolution
+                {
+                    Width = SelectedComposition.Resolution.Width,
+                    Height = SelectedComposition.Resolution.Height,
+                    PresetName = SelectedComposition.Resolution.PresetName
+                },
+                Background = new CompositionBackground
+                {
+                    Type = SelectedComposition.Background.Type,
+                    Color = SelectedComposition.Background.Color,
+                    ImageContentId = SelectedComposition.Background.ImageContentId,
+                    ImageData = SelectedComposition.Background.ImageData,
+                    ScaleMode = SelectedComposition.Background.ScaleMode
+                },
+                Overlays = SelectedComposition.Overlays.Select(o => new CompositionOverlay
+                {
+                    OverlayId = o.OverlayId,
+                    Name = o.Name,
+                    X = o.X,
+                    Y = o.Y,
+                    Width = o.Width,
+                    Height = o.Height,
+                    ZIndex = o.ZIndex,
+                    IsVisible = o.IsVisible,
+                    IsLocked = o.IsLocked
+                }).ToList()
+            };
+
+            await _compositionService.CreateCompositionAsync(duplicate);
+            await LoadCompositions();
+            SelectedComposition = duplicate;
+            StatusMessage = $"Scene duplicated as '{duplicate.Name}'";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error duplicating composition");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ApplyCustomResolution()
+    {
+        if (SelectedComposition == null || _compositionService == null) return;
+
+        try
+        {
+            // Validate resolution bounds
+            if (CustomResolutionWidth < MIN_RESOLUTION || CustomResolutionHeight < MIN_RESOLUTION)
+            {
+                StatusMessage = $"Resolution must be at least {MIN_RESOLUTION}x{MIN_RESOLUTION}";
+                return;
+            }
+            
+            if (CustomResolutionWidth > MAX_RESOLUTION || CustomResolutionHeight > MAX_RESOLUTION)
+            {
+                StatusMessage = $"Resolution cannot exceed {MAX_RESOLUTION}x{MAX_RESOLUTION}";
+                return;
+            }
+            
+            SelectedComposition.Resolution.Width = CustomResolutionWidth;
+            SelectedComposition.Resolution.Height = CustomResolutionHeight;
+            SelectedComposition.Resolution.PresetName = $"Custom ({CustomResolutionWidth}x{CustomResolutionHeight})";
+            
+            await _compositionService.UpdateCompositionAsync(SelectedComposition);
+            OnPropertyChanged(nameof(SelectedComposition));
+            StatusMessage = $"Custom resolution set to {CustomResolutionWidth}x{CustomResolutionHeight}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error applying custom resolution");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ApplyBackgroundScaleMode()
+    {
+        if (SelectedComposition == null || _compositionService == null) return;
+
+        try
+        {
+            SelectedComposition.Background.ScaleMode = SelectedScaleMode switch
+            {
+                "Fill" => ImageScaleMode.Fill,
+                "Fit" => ImageScaleMode.Fit,
+                "Stretch" => ImageScaleMode.Stretch,
+                "Center" => ImageScaleMode.Center,
+                "Tile" => ImageScaleMode.Tile,
+                _ => ImageScaleMode.Fill
+            };
+            
+            await _compositionService.UpdateCompositionAsync(SelectedComposition);
+            OnPropertyChanged(nameof(SelectedComposition));
+            StatusMessage = $"Background scale mode set to {SelectedScaleMode}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error applying scale mode");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task CreateFromTemplate(SceneTemplate? template)
+    {
+        if (template == null || _compositionService == null) return;
+
+        try
+        {
+            var composition = new DisplayComposition
+            {
+                Name = $"{template.Name} - {DateTime.Now:yyyy-MM-dd HH:mm}",
+                Description = template.Description,
+                Resolution = new CompositionResolution
+                {
+                    Width = template.Resolution.Width,
+                    Height = template.Resolution.Height,
+                    PresetName = template.Resolution.PresetName
+                },
+                Background = new CompositionBackground
+                {
+                    Type = template.Background.Type,
+                    Color = template.Background.Color,
+                    ScaleMode = template.Background.ScaleMode
+                }
+            };
+
+            // Create the composition first
+            await _compositionService.CreateCompositionAsync(composition);
+
+            // Add predefined overlays from template
+            if (_overlayService != null)
+            {
+                foreach (var placement in template.OverlayPlacements)
+                {
+                    // Create the overlay
+                    var overlay = new Overlay
+                    {
+                        Name = placement.Name,
+                        Type = placement.OverlayType,
+                        Content = placement.DefaultContent,
+                        Position = new OverlayPosition
+                        {
+                            X = (int)placement.X,
+                            Y = (int)placement.Y,
+                            Width = (int)placement.Width,
+                            Height = (int)placement.Height
+                        },
+                        Style = placement.Style
+                    };
+
+                    await _overlayService.CreateOverlayAsync(overlay);
+
+                    // Add to composition
+                    var compositionOverlay = new CompositionOverlay
+                    {
+                        OverlayId = overlay.Id,
+                        Name = placement.Name,
+                        X = placement.X,
+                        Y = placement.Y,
+                        Width = placement.Width,
+                        Height = placement.Height,
+                        ZIndex = placement.ZIndex
+                    };
+
+                    await _compositionService.AddOverlayToCompositionAsync(composition.Id, compositionOverlay);
+                }
+            }
+
+            await LoadCompositions();
+            await LoadOverlays();
+            SelectedComposition = composition;
+            StatusMessage = $"Scene created from template '{template.Name}'";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating scene from template");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task AddWidget(Widget? widget)
+    {
+        if (widget == null || SelectedComposition == null || _compositionService == null || _overlayService == null) return;
+
+        try
+        {
+            // Map widget type to overlay type
+            var overlayType = widget.Type switch
+            {
+                WidgetType.DateTime => OverlayType.DateTime,
+                WidgetType.Clock => OverlayType.DateTime,
+                WidgetType.Weather => OverlayType.Weather,
+                WidgetType.Ticker => OverlayType.Ticker,
+                WidgetType.Logo => OverlayType.Logo,
+                WidgetType.QrCode => OverlayType.QrCode,
+                _ => OverlayType.Text
+            };
+
+            // Create the overlay
+            var overlay = new Overlay
+            {
+                Name = widget.Name,
+                Type = overlayType,
+                Content = widget.DefaultSettings.GetValueOrDefault("format", widget.Name),
+                Position = new OverlayPosition
+                {
+                    Width = widget.DefaultWidth,
+                    Height = widget.DefaultHeight
+                }
+            };
+
+            await _overlayService.CreateOverlayAsync(overlay);
+
+            // Add to composition at center
+            var compositionOverlay = new CompositionOverlay
+            {
+                OverlayId = overlay.Id,
+                Name = widget.Name,
+                X = (SelectedComposition.Resolution.Width - widget.DefaultWidth) / 2,
+                Y = (SelectedComposition.Resolution.Height - widget.DefaultHeight) / 2,
+                Width = widget.DefaultWidth,
+                Height = widget.DefaultHeight
+            };
+
+            await _compositionService.AddOverlayToCompositionAsync(SelectedComposition.Id, compositionOverlay);
+            await LoadOverlays();
+            OnPropertyChanged(nameof(SelectedComposition));
+            StatusMessage = $"Widget '{widget.Name}' added to scene";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding widget");
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void TogglePreviewMode()
+    {
+        IsPreviewMode = !IsPreviewMode;
+        StatusMessage = IsPreviewMode ? "Preview mode enabled" : "Edit mode enabled";
+    }
+
+    [RelayCommand]
+    private void CenterOverlay()
+    {
+        if (SelectedCompositionOverlay == null || SelectedComposition == null) return;
+        
+        SelectedCompositionOverlay.X = (SelectedComposition.Resolution.Width - SelectedCompositionOverlay.Width) / 2;
+        SelectedCompositionOverlay.Y = (SelectedComposition.Resolution.Height - SelectedCompositionOverlay.Height) / 2;
+        OnPropertyChanged(nameof(SelectedComposition));
+        StatusMessage = "Overlay centered";
+    }
+
+    [RelayCommand]
+    private void AlignOverlayLeft()
+    {
+        if (SelectedCompositionOverlay == null) return;
+        
+        SelectedCompositionOverlay.X = ALIGNMENT_MARGIN;
+        OnPropertyChanged(nameof(SelectedComposition));
+    }
+
+    [RelayCommand]
+    private void AlignOverlayRight()
+    {
+        if (SelectedCompositionOverlay == null || SelectedComposition == null) return;
+        
+        SelectedCompositionOverlay.X = SelectedComposition.Resolution.Width - SelectedCompositionOverlay.Width - ALIGNMENT_MARGIN;
+        OnPropertyChanged(nameof(SelectedComposition));
+    }
+
+    [RelayCommand]
+    private void AlignOverlayTop()
+    {
+        if (SelectedCompositionOverlay == null) return;
+        
+        SelectedCompositionOverlay.Y = ALIGNMENT_MARGIN;
+        OnPropertyChanged(nameof(SelectedComposition));
+    }
+
+    [RelayCommand]
+    private void AlignOverlayBottom()
+    {
+        if (SelectedCompositionOverlay == null || SelectedComposition == null) return;
+        
+        SelectedCompositionOverlay.Y = SelectedComposition.Resolution.Height - SelectedCompositionOverlay.Height - ALIGNMENT_MARGIN;
+        OnPropertyChanged(nameof(SelectedComposition));
+    }
+
+    private void LoadSceneTemplates()
+    {
+        SceneTemplates.Clear();
+        foreach (var template in DefaultSceneTemplates.GetTemplates())
+        {
+            SceneTemplates.Add(template);
         }
     }
 
