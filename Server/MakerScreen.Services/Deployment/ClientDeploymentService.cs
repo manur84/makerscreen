@@ -189,11 +189,19 @@ public class ClientDeploymentService : IClientDeploymentService
             
             // Create zip package of all files
             var zipPath = Path.Combine(_deploymentPath, $"makerscreen_rpi_{package.Version}_{DateTime.UtcNow:yyyyMMddHHmmss}.zip");
-            if (File.Exists(zipPath))
+            try
             {
-                File.Delete(zipPath);
+                if (File.Exists(zipPath))
+                {
+                    File.Delete(zipPath);
+                }
+                ZipFile.CreateFromDirectory(outputPath, zipPath);
             }
-            ZipFile.CreateFromDirectory(outputPath, zipPath);
+            catch (IOException ioEx)
+            {
+                _logger.LogError(ioEx, "I/O error creating deployment ZIP at {ZipPath}", zipPath);
+                throw new InvalidOperationException($"Failed to create deployment package: {ioEx.Message}", ioEx);
+            }
             
             _logger.LogInformation("Raspberry Pi deployment package created at {ZipPath}", zipPath);
             

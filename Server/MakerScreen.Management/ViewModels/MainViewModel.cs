@@ -1568,6 +1568,16 @@ public partial class MainViewModel : ObservableObject
     private const double MAX_ZOOM = 2.0;
     private const double ZOOM_STEP = 0.1;
     private const double DEFAULT_ZOOM = 0.35;
+    
+    /// <summary>
+    /// Estimated viewport width for zoom-to-fit calculations (in pixels)
+    /// </summary>
+    private const double VIEWPORT_WIDTH = 700.0;
+    
+    /// <summary>
+    /// Estimated viewport height for zoom-to-fit calculations (in pixels)
+    /// </summary>
+    private const double VIEWPORT_HEIGHT = 500.0;
 
     /// <summary>
     /// Zooms in on the scene editor canvas
@@ -1611,11 +1621,10 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ZoomToFit()
     {
-        // Calculate zoom level to fit typical viewport (800x600)
         if (SelectedComposition != null)
         {
-            var scaleX = 700.0 / SelectedComposition.Resolution.Width;
-            var scaleY = 500.0 / SelectedComposition.Resolution.Height;
+            var scaleX = VIEWPORT_WIDTH / SelectedComposition.Resolution.Width;
+            var scaleY = VIEWPORT_HEIGHT / SelectedComposition.Resolution.Height;
             ZoomLevel = Math.Min(scaleX, scaleY);
             ZoomLevel = Math.Max(MIN_ZOOM, Math.Min(MAX_ZOOM, ZoomLevel));
             StatusMessage = $"Zoom to fit: {ZoomLevel:P0}";
